@@ -34,7 +34,9 @@ load_dotenv()   #loads stuff from .env
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 BOT_VERSION = os.getenv('BOT_VERSION')
+BOT_PREFIX = os.getenv('PREFIX')
 WHITELIST = os.getenv('SERVER_WHITELIST')
+
 DEFAULT_EMBED_COLOR = discord.Colour(0xfc03ad)
 print('done.')
 
@@ -45,10 +47,8 @@ print('done.')
 print('starting Atari...')
 
 ##############################################################
-##                  Specify bot prefix below                ##
+##                  Specify bot prefix in .env              ##
 ##############################################################
-
-BOT_PREFIX = '#'
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
 
