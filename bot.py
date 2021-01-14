@@ -713,7 +713,7 @@ async def message(message):
         await message.channel.send('*Tawi uwu*')
         
     
-    if 'TARI IS' in content.upper() and 'CUTE' in content.upper() or 'TAR1 IS' in content.upper() and 'CUTE' in content.upper() or 'T4R1 IS' in content.upper() and 'CUTE' in content.upper():
+    if content.upper().startswith("TARI IS CUTE")or content.upper().startswith('TAR1 IS CUTE') or content.upper().startswith('T4R1 IS CUTE'):
         await message.channel.send('***no u***')
         
 
@@ -784,7 +784,7 @@ async def message(message):
         await message.channel.send("I'm doing goood, {0.author.name}. <3".format(message))
         return
 
-    if 'ATARI' in content.upper() and not '?SAY' in content.upper():
+    if 'ATARI' in content.upper() and not BOT_PREFIX+'SAY' in content.upper():
         if 'ATARI' in content.upper() and 'CUTE' in content.upper():
             await message.channel.send("aaaaaaaaaa")
             await message.channel.send("You're cuteee")
