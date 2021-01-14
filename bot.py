@@ -1,4 +1,9 @@
 # bot.py
+##############################################################
+##                                                          ##
+##                  -    Imports  -                         ##
+##                                                          ##
+##############################################################
 import asyncio
 import os
 import random
@@ -19,6 +24,10 @@ from discord.guild import Guild
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
+##############################################################
+##                  Loading dotenv Stuff                    ##
+##############################################################
+
 print('loading dotenv content...')
 
 load_dotenv()   #loads stuff from .env
@@ -29,16 +38,60 @@ WHITELIST = os.getenv('SERVER_WHITELIST')
 DEFAULT_EMBED_COLOR = discord.Colour(0xfc03ad)
 print('done.')
 
+##############################################################
+##                       Startup                            ##
+##############################################################
+
 print('starting Atari...')
 
+##############################################################
+##                  Specify bot prefix below                ##
+##############################################################
+
 BOT_PREFIX = '#'
-#intents = discord.Intents.all()
+
+bot = commands.Bot(command_prefix=BOT_PREFIX)
+
 intents = discord.Intents(messages=True, guilds=True)
 intents.messages = True
-#client = discord.Client(intents=intents)
-bot = commands.Bot(command_prefix=BOT_PREFIX)
+
+
+@bot.event
+async def on_ready():
+    print(bot.user, ' has connected to Discord!\n')
+
+    print ("------------------------------------")
+    print (f"Bot Name: {bot.user.name}")
+    print (f"Bot ID: {bot.user.id}")
+    print (f"Discord Version: {discord.__version__}")
+    print (f"Bot Version: {BOT_VERSION}")
+    print ("------------------------------------")
+
+    print('setting activity...')
+
+    ## useful docs for setting activities
+    ## https://medium.com/python-in-plain-english/how-to-change-discord-bot-status-with-discord-py-39219c8fceea
+    ## https://stackoverflow.com/questions/59126137/how-to-change-discord-py-bot-activity
+    
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Tawi"))
+    print('activity set.')
+
+    guild = discord.utils.find(lambda g: g.name == GUILD, bot.guilds)
+    print(
+        f'{bot.user} is connected to the following guilds:\n'
+        f'{guild.name}(id: {guild.id})'
+    )
+    print(f'Guild Members:{guild.member_count}')
+
+
+## Getting rid of default commands
+
 bot.remove_command('help')
 bot.remove_command('say')
+
+######################################################
+##                  - COMMANDS -                    ##
+######################################################
 
 @bot.command(name="help", description="Returns all commands available", aliases=['h'])
 async def help(ctx):
@@ -337,9 +390,9 @@ async def furhowl(ctx):
     await ctx.send(embed=em)
 
 @bot.command()
-async def furhug(ctx):
+async def furhug(ctx, member: discord.User = 'null'):
     if str(ctx.channel.id) not in WHITELIST: return
-
+    
     em = discord.Embed(
         title=None,
         description=None,
@@ -348,7 +401,17 @@ async def furhug(ctx):
     r = requests.get('https://yiff.rest/V2/Furry/Hug')
     print (r.json())
     em.set_image(url=str(r.json()["images"][0]["url"]))
+
+    await ctx.send('*awww*')
+
+    ## thx for this flonky :3
+
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Hugs {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} hugs {member.mention}*")
     await ctx.send(embed=em)
+    
 
 @bot.command()
 async def furkiss(ctx):
@@ -462,6 +525,7 @@ async def furyiffgynomorph(ctx):
     em.set_image(url=str(r.json()["images"][0]["url"]))
     await ctx.send(embed=em)
 
+
 @bot.command()
 async def textbox(ctx,*text):
     if str(ctx.channel.id) not in WHITELIST: return
@@ -558,40 +622,6 @@ async def remindme(ctx, *reminder):
         await asyncio.sleep(reminder_time)
         await ctx.reply(f"Hey, {ctx.message.author.name}. \nI should remind you to {reminder}.")
 
-@bot.event
-async def on_ready():
-    print(bot.user, ' has connected to Discord!\n')
-
-    print ("------------------------------------")
-    print (f"Bot Name: {bot.user.name}")
-    print (f"Bot ID: {bot.user.id}")
-    print (f"Discord Version: {discord.__version__}")
-    print (f"Bot Version: {BOT_VERSION}")
-    print ("------------------------------------")
-
-    print('setting activity...')
-    # https://medium.com/python-in-plain-english/how-to-change-discord-bot-status-with-discord-py-39219c8fceea
-    # https://stackoverflow.com/questions/59126137/how-to-change-discord-py-bot-activity
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Tawi"))
-    print('activity set.')
-
-    """
-    #show guilds the bot is connected to
-    for guild in bot.guilds:
-        if guild.name == GUILD:
-            break
-    """
-
-    guild = discord.utils.find(lambda g: g.name == GUILD, bot.guilds)
-    print(
-        f'{bot.user} is connected to the following guilds:\n'
-        f'{guild.name}(id: {guild.id})'
-    )
-    print(f'Guild Members:{guild.member_count}')
-
-    #show members in guild
-    #for member in guild.members: 
-    #    members = '\n - '.join(member.name)
 
 bot.shut = False
 @bot.listen('on_message')
@@ -632,10 +662,6 @@ async def message(message):
     
     if bot.shut==True: return
 
-    """
-    if content.upper().startswith('PING'):
-        await message.reply('Pong')
-    """
 
     if content.upper().startswith('HELLO ATARI'):
         await message.channel.send('Hello!')
@@ -697,7 +723,10 @@ async def message(message):
 
     if 'DAD BOT' in content.upper():
         await message.channel.send('*sweats*')
-        
+
+
+
+    ## User specific stuff I added bc I had the bored
 
     if 'CUTE' in content.upper() and message.author.id == 683813339369177148 and rnd > 49:
         await message.channel.send('*Alpha is cute*')
@@ -717,6 +746,7 @@ async def message(message):
     if content.upper().startswith("BRRRR"):
         await message.channel.send('*brrrrrrrrr*')
 
+    ## well... yeeaaaaa let's not talk about this
     if 'BLYAT' in content.upper():
         await message.channel.send('*nyet suka blyat*')
         await message.channel.send('*Битч*')
@@ -726,20 +756,20 @@ async def message(message):
         await message.channel.send('*eeeeeeeeee*')
         
 
-    if content.upper().startswith("I'M") and message.author.id != 355330245433360384 and rnd > 90:
+    if content.upper().startswith("I'M") and rnd > 90:
         content = content.capitalize().replace("I'm ", '')
         content = content.replace(".", '')
         response = f"Hi {content}, I'm Atari"
         await message.channel.send(response)
         
-
-    if content.upper().startswith("IM") and message.author.id != 355330245433360384 and rnd > 90:
+    ## for my german friends that forget how to type that ' thingy
+    if content.upper().startswith("IM") and rnd > 90:
         content = content.capitalize().replace("Im ", '')
         content = content.replace(".", '')
         response = f"Hi {content}, I'm Atari"
         await message.channel.send(response)
         
-          
+    ## more user specific stuff I added bc I had the bored      
     if content.upper().startswith("IM") and message.author.id == 355330245433360384 and rnd > 90:
         await message.channel.send("Flonky, you're such a bot :3")
         return
@@ -748,10 +778,7 @@ async def message(message):
         await message.channel.send("Flonky, you're such a bot :3")
         return
 
-    if message.content.startswith('?hug'):
-        await message.channel.send('*awww*')
-        await message.channel.send("{0.author.mention} hugs someone".format(message))
-        return
+    ## how to make a bot have conversations pt1
 
     if 'HRU' in content.upper() and 'ATARI' in content.upper() or 'HOW ARE YOU' in content.upper() and 'ATARI' in content.upper():
         await message.channel.send("I'm doing goood, {0.author.name}. <3".format(message))
@@ -763,9 +790,6 @@ async def message(message):
             await message.channel.send("You're cuteee")
             return
         
-        
-        #async def pred(m):
-        #    return m.author == message.author and m.channel == message.channel
 
         try:
             msg = await bot.wait_for('message', check=None, timeout=60.0)
@@ -778,83 +802,7 @@ async def message(message):
                 await message.channel.send("I'm finee, {0.author.name}.".format(msg))
             if 'UGLY' in msg.content.upper():
                 await msg.reply(f"{rnd}%".format(msg))
-            """
-            if 'REMIND ME TO' in msg.content.upper():
-                if 'REMIND ME TO' == msg.content.upper():
-                    await message.channel.send("Can't remind you to nothin, lol.")
-                    return
-                remind=msg.content.capitalize().replace("Remind me to ", '')
-                remind=remind.replace("my", "your")
-                remind=remind.replace("me", "you")
-                remind=remind.replace("your", "my")
-                remind=remind.replace("you", "me")
-                remind=remind.replace(".", "")
-
-                await message.channel.send("Surely, in how much minutes?")
-
-                try:
-                    msg2 = await bot.wait_for('message', check=None, timeout=60.0)
-                except asyncio.TimeoutError:
-                    await message.channel.send('Please specify a number of minutes for me next time.')
-                else:
-                    try:
-                        msg2catch = int(f"{msg2.content}")
-                    except ValueError:
-                        await message.channel.send("Uhhh only numbers pls ^^'")
-
-                    if int(msg2.content) == 1:
-                        await message.channel.send(f'I will remind you in {msg2.content} min.')
-                    if int(msg2.content) > 1:
-                        await message.channel.send(f'I will remind you in {msg2.content} mins.')
-                    reminder = int(f"{msg2.content}") * 60
-                    await asyncio.sleep(reminder)
-                    await message.channel.send(f'Hey, {msg.author.name}.')
-                    await msg.reply(f"I should remind you to {remind}.".format(msg))
-                    """                
-
-"""
-@bot.command(pass_context=True, aliases=['w'])
-@has_permissions(kick_members=True)
-async def warn(ctx, member: discord.User = 'null', desc='null'):
-    if member == 'null' or member == ctx.message.author:
-        em = discord.Embed(title="You cannot warn yourself",
-                           description="",
-                           color=DEFAULT_EMBED_COLOR)
-
-        await ctx.send(embed=em)
-        return
-
-    if not desc == 'null':
-        em = discord.Embed(
-            title=f"You\'ve been warned on {ctx.guild.name}",
-            description="Reason: \"" + desc + "\"",
-            color=DEFAULT_EMBED_COLOR
-        )
-        em.set_footer(text=f"Moderator: {ctx.message.author.name}")
-        await member.send(embed=em)
-
-        em2 = discord.Embed(
-            title=member.name + " has been warned!",
-            description=f"Reason: \"{desc}\"",
-            color=DEFAULT_EMBED_COLOR
-        )
-        em2.set_footer(text=f"Moderator: {ctx.message.author.name}")
-        await ctx.send(embed=em2)
-
-    else:
-        em = discord.Embed(
-            title="Please specify a reason",
-            description="",
-            color=DEFAULT_EMBED_COLOR
-        )
-        await ctx.send(embed=em)
 
 
-@bot.event
-async def on_member_join(member):
-    await member.create_dm()
-    await message.member.dm_channel.send(f'Hi {member.name}!')
-"""
-
-
+## run that stuff
 bot.run(TOKEN)
