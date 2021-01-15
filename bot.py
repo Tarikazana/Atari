@@ -804,8 +804,14 @@ async def message(message):
         except asyncio.TimeoutError:
             await message.channel.send('<3')
         else:
-            if 'CUTE' in msg.content.upper():
+            if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper():
                 await message.channel.send("You're cute aswell, {0.author.name}.".format(msg))
+            if "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd > 49 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd > 49:
+                await message.channel.send("qwq".format(msg))
+            if "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd < 50 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd < 50:
+                await message.channel.send("But...".format(msg))
+                await message.channel.send("But...".format(msg))
+                await message.channel.send("But you are.".format(msg))
             if 'HRU' in msg.content.upper() or 'HOW ARE YOU' in msg.content.upper():
                 await message.channel.send("I'm finee, {0.author.name}.".format(msg))
             if 'UGLY' in msg.content.upper():
