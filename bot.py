@@ -447,13 +447,15 @@ async def furhug(ctx, member: discord.User = 'null'):
     await ctx.send(embed=em)
 
 @bot.command()
-async def vore(ctx, member: discord.User = 'null'):
+async def vore(ctx, member: discord.User = None):
     if str(ctx.channel.id) not in WHITELIST: return
+    print(member)
+    if member == ctx.message.author or member == None:
+        await ctx.send(f"**Swallows {ctx.message.author.name} whole**")
+        return
     if member.id == 349471395685859348 and ctx.message.author.id != 289802289638539274:
         await ctx.send(f"Heh, you would like that eh :3")
         return
-    if member == ctx.message.author or member == 'null':
-        await ctx.send(f"**Swallows {ctx.message.author.name} whole**")
     if member.id == bot.user.id:
         await ctx.send("nuuuu qwq")
     else:
@@ -809,7 +811,7 @@ async def message(message):
     if 'CUTE' in content.upper() and message.author.id == 289802289638539274 and rnd > 49:
         await message.channel.send('*Lynix is so cute uwu*')
 
-    if 'VORE' in content.upper() and not '#VORE' in content.upper():
+    if 'VORE' in content.upper() and not BOT_PREFIX+'VORE' in content.upper():
         if rnd > 90:
             await message.channel.send("I'm kinda hungyyy")
             await message.channel.send(f"come hereee {message.author.mention}")
