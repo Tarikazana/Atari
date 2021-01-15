@@ -82,6 +82,8 @@ async def on_ready():
         f'{guild.name}(id: {guild.id})'
     )
     print(f'Guild Members:{guild.member_count}')
+    print ("------------------------------------")
+    print ("\nMessage Log:")
 
 
 ## Getting rid of default commands
@@ -306,7 +308,7 @@ async def fox(ctx):
     await ctx.send(embed=em)
 
 @bot.command()
-async def furboop(ctx):
+async def furboop(ctx, member: discord.User = 'null'):
     if str(ctx.channel.id) not in WHITELIST: return
 
     em = discord.Embed(
@@ -317,6 +319,11 @@ async def furboop(ctx):
     r = requests.get('https://yiff.rest/V2/Furry/Boop')
     print (r.json())
     em.set_image(url=str(r.json()["images"][0]["url"]))
+
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Boops {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} boops {member.mention}*")
     await ctx.send(embed=em)
 
 @bot.command()
@@ -537,7 +544,7 @@ async def textbox(ctx,*text):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    em.set_image(url="http://atari.tarikazana.me:5000/textbox.png?avatar=" + str(bot.user.avatar_url).replace('webp','png') + "&background=https://media.discordapp.net/attachments/770230039299227649/798844465313873931/62411_anime_scenery_rain_rain.jpg&avatar_size=80&crt_overlay=False&avatar_position=right&text=" + str(text))
+    em.set_image(url="http://djosgaming.de:5000/textbox.png?avatar=" + str(bot.user.avatar_url).replace('webp','png') + "&background=https://media.discordapp.net/attachments/770230039299227649/798844465313873931/62411_anime_scenery_rain_rain.jpg&avatar_size=80&crt_overlay=False&avatar_position=right&text=" + str(text))
     await ctx.send(embed=em)
 
 
@@ -628,6 +635,7 @@ bot.shut = False
 async def message(message):
     # we do not want the bot to reply to itself
     if message.author == bot.user:
+        print(f'{message.author}: {message.content}')
         return
     if message.author.bot: return
 
@@ -639,8 +647,8 @@ async def message(message):
 
     content = message.content
     rnd = random.randrange(0, 100)
-    print(f'rnd = {rnd}')
-    print(content)
+    print(f'{message.author}: {content} // rnd = {rnd}')
+    
 
     if 'SHUT' in content.upper() and rnd < 50:
         if 'SHUT' in content.upper() and 'ATARI' in content.upper():
