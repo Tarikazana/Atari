@@ -28,7 +28,19 @@ from dotenv import load_dotenv
 ##                  Loading dotenv Stuff                    ##
 ##############################################################
 
-print('loading dotenv content...')
+## for print
+class bcolors:
+    CYAN = '\033[95m'   #PURPLE IN TERMINAL
+    CYAN2 = '\033[94m'  #OKBLUE IN TERMINAL
+    CYAN3 = '\033[96m'  #OKCYAN IN TERMINAL
+    PURPLE = '\033[92m'     #OKGREEN IN TERMINAL
+    PURPLE2 = '\033[91m'    #FAIL IN TERMINAL
+    WARNING = '\033[93m'    #YELLOW IN TERMINAL
+    ENDC = '\033[0m'        #same
+    BOLD = '\033[1m'        #same
+    UNDERLINE = '\033[4m'   #same
+
+print(f"{bcolors.CYAN}loading dotenv content...{bcolors.ENDC}")
 
 load_dotenv()   #loads stuff from .env
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -44,7 +56,7 @@ print('done.')
 ##                       Startup                            ##
 ##############################################################
 
-print('starting Atari...')
+print(f"{bcolors.CYAN}starting Atari...{bcolors.ENDC}")
 
 ##############################################################
 ##                  Specify bot prefix in .env              ##
@@ -58,7 +70,7 @@ intents.messages = True
 
 @bot.event
 async def on_ready():
-    print(bot.user, ' has connected to Discord!\n')
+    print(f"{bcolors.PURPLE}{bot.user} has connected to Discord!\n{bcolors.ENDC}")
 
     print ("------------------------------------")
     print (f"Bot Name: {bot.user.name}")
@@ -67,14 +79,14 @@ async def on_ready():
     print (f"Bot Version: {BOT_VERSION}")
     print ("------------------------------------")
 
-    print('setting activity...')
+    print(f"{bcolors.PURPLE}setting activity...{bcolors.ENDC}")
 
     ## useful docs for setting activities
     ## https://medium.com/python-in-plain-english/how-to-change-discord-bot-status-with-discord-py-39219c8fceea
     ## https://stackoverflow.com/questions/59126137/how-to-change-discord-py-bot-activity
     
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Tawi"))
-    print('activity set.')
+    print(f"{bcolors.WARNING}activity set.{bcolors.ENDC}")
 
     guild = discord.utils.find(lambda g: g.name == GUILD, bot.guilds)
     print(
@@ -155,6 +167,7 @@ async def ping(ctx):
     message = await ctx.reply("Pong!")
     ping1 = (time.monotonic() - before) * 1000
     await message.edit(content=f"Pong!  `{int(ping1)}ms`")
+    
 
 @bot.command()
 async def whitelist(ctx):
@@ -208,6 +221,20 @@ async def say(ctx, *args):
         return
     await ctx.message.delete()
     await ctx.send(resp)
+
+@bot.command(name="furinsult", description="insults you lol", aliases=['insult'])
+async def furinsult(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+    
+    await ctx.send('awww')
+
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Fuck you {ctx.message.author.name}*")
+    ## for my aussie frien lmao
+    if '750277467578695740' in member.mention:
+        await ctx.send(f"*They’re actually called flip-flops {member.name}*")
+    else:
+        await ctx.send(f"*Fuck you {member.name}*")
 
 @bot.command()
 async def yiff(ctx):
@@ -418,6 +445,19 @@ async def furhug(ctx, member: discord.User = 'null'):
     else:
         await ctx.send(f"*{ctx.message.author.name} hugs {member.mention}*")
     await ctx.send(embed=em)
+
+@bot.command()
+async def vore(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+    if member.id == 349471395685859348 and ctx.message.author.id != 289802289638539274:
+        await ctx.send(f"Heh, you would like that eh :3")
+        return
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"**Swallows {ctx.message.author.name} whole**")
+    if member.id == bot.user.id:
+        await ctx.send("nuuuu qwq")
+    else:
+        await ctx.send(f"**{ctx.message.author.name} swallows {member.mention} whole**")
     
 
 @bot.command()
@@ -629,13 +669,12 @@ async def remindme(ctx, *reminder):
         await asyncio.sleep(reminder_time)
         await ctx.reply(f"Hey, {ctx.message.author.name}. \nI should remind you to {reminder}.")
 
-
 bot.shut = False
 @bot.listen('on_message')
 async def message(message):
     # we do not want the bot to reply to itself
     if message.author == bot.user:
-        print(f'{message.author}: {message.content}')
+        print(f"{bcolors.CYAN3}{message.author} in {message.channel.name} on {message.guild.name}:\n {message.content}{bcolors.ENDC}")
         return
     if message.author.bot: return
 
@@ -647,7 +686,7 @@ async def message(message):
 
     content = message.content
     rnd = random.randrange(0, 100)
-    print(f'{message.author}: {content} // rnd = {rnd}')
+    print(f"{bcolors.CYAN}{message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {content} // {bcolors.PURPLE}rnd = {rnd}{bcolors.ENDC}")
     
 
     if 'SHUT' in content.upper() and rnd < 50:
@@ -670,6 +709,17 @@ async def message(message):
     
     if bot.shut==True: return
 
+    if content.upper().startswith('E') and rnd > 49:
+        await message.channel.send('A')
+        await message.channel.send('Sports')
+
+    if content.upper().startswith('E') and rnd < 50:
+        await message.channel.send('6')
+        await message.channel.send('2')
+        await message.channel.send('1')
+    
+    if content.upper().startswith("ITS IN THE GAME") or content.upper().startswith("IT'S IN THE GAME"):
+        await message.channel.send('ikr')
 
     if content.upper().startswith('HELLO ATARI'):
         await message.channel.send('Hello!')
@@ -707,6 +757,22 @@ async def message(message):
         await message.channel.send('*e*')
         await message.channel.send("And I'm {0.author.name} lmao".format(message))
         return
+
+    if content.upper().startswith("I'M FAOLAN") or content.upper().startswith("IM FAOLAN"):
+        await message.channel.send("***Puts on a teal bandana, 3 tails, wings and one robo contact*** Look! I'm Faolan! Howdy howdy howdy!".format(message))
+        return
+
+    if content.upper().startswith("I'M BLADE") or content.upper().startswith("IM BLADE"):
+        await message.channel.send("***Puts on Spyro costume*** Look! I'm Blade! Rawr rawr rawr!".format(message))
+        return
+
+    if content.upper().startswith("I'M TARI") or content.upper().startswith("IM TARI"):
+        await message.channel.send("***Puts on proto costume*** Look! I'm Tari! Beep boop beep!".format(message))
+        return
+
+    if content.upper().startswith("I'M XENO") or content.upper().startswith("IM XENO"):
+        await message.channel.send("***GETS COOKIE JAR*** Look! I'm Xeno! I'm Cute! >w<".format(message))
+        return
         
     
     if 'HORNY' in content.upper() and rnd > 49:
@@ -742,6 +808,27 @@ async def message(message):
 
     if 'CUTE' in content.upper() and message.author.id == 289802289638539274 and rnd > 49:
         await message.channel.send('*Lynix is so cute uwu*')
+
+    if 'VORE' in content.upper() and not '#VORE' in content.upper():
+        if rnd > 90:
+            await message.channel.send("I'm kinda hungyyy")
+            await message.channel.send(f"come hereee {message.author.mention}")
+            try:
+                msg = await bot.wait_for('message', check=None, timeout=15.0)
+            except asyncio.TimeoutError:
+                await message.channel.send(f'**noms {message.author.name}**')
+            else:
+                await message.channel.send("**noms you**".format(msg))
+                return
+        if rnd > 49:
+            await message.channel.send("**vore**")
+            return
+        if rnd > 24:
+            await message.channel.send("*nuuu don't eat me qwq*")
+            return
+        if rnd > -1:
+            await message.channel.send("*vore owo*")
+            return
         
     
     if content.upper().startswith("NO U"):
@@ -755,7 +842,7 @@ async def message(message):
         await message.channel.send('*brrrrrrrrr*')
 
     ## well... yeeaaaaa let's not talk about this
-    if 'BLYAT' in content.upper():
+    if 'BLYAT' in content.upper() or 'SUKA' in content.upper():
         await message.channel.send('*nyet suka blyat*')
         await message.channel.send('*Битч*')
         
@@ -764,18 +851,32 @@ async def message(message):
         await message.channel.send('*eeeeeeeeee*')
         
 
-    if content.upper().startswith("I'M") and rnd > 90:
+    if content.upper().startswith("I'M") and rnd > 69:
         content = content.capitalize().replace("I'm ", '')
         content = content.replace(".", '')
+        print("Name before: "+message.author.display_name)
+        oldnick=message.author.display_name
         response = f"Hi {content}, I'm Atari"
         await message.channel.send(response)
+
+        await message.author.edit(nick=content)
+        await asyncio.sleep(10)
+        await message.author.edit(nick=oldnick)
+        await message.channel.send(f"lmao sry, {oldnick}")
+
         
     ## for my german friends that forget how to type that ' thingy
-    if content.upper().startswith("IM") and rnd > 90:
+    if content.upper().startswith("IM") and rnd > 69:
         content = content.capitalize().replace("Im ", '')
         content = content.replace(".", '')
+        print("Name before: "+message.author.display_name)
+        oldnick=message.author.display_name
+        await message.author.edit(nick=content)
         response = f"Hi {content}, I'm Atari"
         await message.channel.send(response)
+        await asyncio.sleep(10)
+        await message.author.edit(nick=oldnick)
+        await message.channel.send(f"lmao sry, {oldnick}")
         
     ## more user specific stuff I added bc I had the bored      
     if content.upper().startswith("IM") and message.author.id == 355330245433360384 and rnd > 90:
@@ -818,7 +919,7 @@ async def message(message):
             if 'NOT NOT' in msg.content.upper():
                 await message.channel.send("**not not**".format(msg))
                 return
-            if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and not "NOT" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper():
+            if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and not "NOT" in msg.content.upper() and not "IS" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "IS" in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "IS" in msg.content.upper():
                 await message.channel.send("You're cute aswell, {0.author.name}.".format(msg))
                 return
             if msg.content.upper().startswith("YOU'RE NOT CUTE") and rnd > 49 or "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd > 49 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd > 49:
@@ -832,6 +933,8 @@ async def message(message):
             if 'HRU' in msg.content.upper() or 'HOW ARE YOU' in msg.content.upper():
                 await message.channel.send("I'm finee, {0.author.name}.".format(msg))
             if 'UGLY' in msg.content.upper():
+                await msg.reply(f"{rnd}%".format(msg))
+            if 'IS' in msg.content.upper() and 'CUTE' in msg.content.upper():
                 await msg.reply(f"{rnd}%".format(msg))
 
 
