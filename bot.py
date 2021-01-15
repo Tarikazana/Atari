@@ -793,9 +793,20 @@ async def message(message):
         return
 
     if 'ATARI' in content.upper() and not BOT_PREFIX+'SAY' in content.upper():
-        if 'ATARI' in content.upper() and 'CUTE' in content.upper():
+        if 'ATARI' in content.upper() and 'NOT NOT' in content.upper():
+                await message.channel.send("**not not**".format(message))
+                return
+        if 'ATARI' in content.upper() and 'CUTE' in content.upper() and not "AREN'T" in content.upper() and not "CUTEN'T" in content.upper() and not "NOT" in content.upper():
             await message.channel.send("aaaaaaaaaa")
             await message.channel.send("You're cuteee")
+            return
+        if 'ATARI' in content.upper() and 'CUTE' in content.upper() and ("AREN'T" in content.upper() or "CUTEN'T" in content.upper() or "NOT" in content.upper()) and rnd > 49:
+            await message.channel.send("qwq".format(message))
+            return
+        if 'ATARI' in content.upper() and 'CUTE' in content.upper() and ("AREN'T" in content.upper() or "CUTEN'T" in content.upper() or "NOT" in content.upper()) and rnd < 50:
+            await message.channel.send("But...".format(message))
+            await message.channel.send("But...".format(message))
+            await message.channel.send("But you are.".format(message))
             return
         
 
@@ -804,14 +815,20 @@ async def message(message):
         except asyncio.TimeoutError:
             await message.channel.send('<3')
         else:
-            if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper():
+            if 'NOT NOT' in msg.content.upper():
+                await message.channel.send("**not not**".format(msg))
+                return
+            if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and not "NOT" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper():
                 await message.channel.send("You're cute aswell, {0.author.name}.".format(msg))
-            if "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd > 49 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd > 49:
+                return
+            if msg.content.upper().startswith("YOU'RE NOT CUTE") and rnd > 49 or "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd > 49 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd > 49:
                 await message.channel.send("qwq".format(msg))
-            if "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd < 50 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd < 50:
+                return
+            if msg.content.upper().startswith("YOU'RE NOT CUTE") and rnd < 50 or "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd < 50 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd < 50:
                 await message.channel.send("But...".format(msg))
                 await message.channel.send("But...".format(msg))
                 await message.channel.send("But you are.".format(msg))
+                return
             if 'HRU' in msg.content.upper() or 'HOW ARE YOU' in msg.content.upper():
                 await message.channel.send("I'm finee, {0.author.name}.".format(msg))
             if 'UGLY' in msg.content.upper():
