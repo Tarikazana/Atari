@@ -23,6 +23,7 @@ from discord.ext.commands.core import has_permissions
 from discord.guild import Guild
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
+from requests.models import ReadTimeoutError
 
 ##############################################################
 ##                  Loading dotenv Stuff                    ##
@@ -245,10 +246,20 @@ async def yiff(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('http://www.sheri.bot/api/yiff/', timeout=5)
-    print (r.json())
-    em.set_image(url=str(r.json()["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('http://www.sheri.bot/api/yiff/', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def wolf(ctx):
@@ -259,10 +270,20 @@ async def wolf(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('http://www.sheri.bot/api/wolves/')
-    print (r.json())
-    em.set_image(url=str(r.json()["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('http://www.sheri.bot/api/wolves/', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def tiger(ctx):
@@ -273,10 +294,20 @@ async def tiger(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('http://www.sheri.bot/api/tiger/')
-    print (r.json())
-    em.set_image(url=str(r.json()["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('http://www.sheri.bot/api/tiger/', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def mur(ctx):
@@ -287,10 +318,20 @@ async def mur(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('http://www.sheri.bot/api/mur/')
-    print (r.json())
-    em.set_image(url=str(r.json()["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('http://www.sheri.bot/api/mur/', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def lion(ctx):
@@ -301,10 +342,20 @@ async def lion(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('http://www.sheri.bot/api/lion/')
-    print (r.json())
-    em.set_image(url=str(r.json()["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('http://www.sheri.bot/api/lion/', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def husky(ctx):
@@ -315,10 +366,20 @@ async def husky(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('http://www.sheri.bot/api/husky/')
-    print (r.json())
-    em.set_image(url=str(r.json()["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('http://www.sheri.bot/api/husky/', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def fox(ctx):
@@ -329,10 +390,20 @@ async def fox(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://www.sheri.bot/api/fox/')
-    print (r.json())
-    em.set_image(url=str(r.json()["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('http://www.sheri.bot/api/fox/', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furboop(ctx, member: discord.User = 'null'):
@@ -343,9 +414,20 @@ async def furboop(ctx, member: discord.User = 'null'):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Boop')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Boop', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Boops {ctx.message.author.name}*")
@@ -362,10 +444,20 @@ async def furcuddle(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Cuddle')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Cuddle', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furflop(ctx):
@@ -376,10 +468,20 @@ async def furflop(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Flop')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Flop', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def fursuit(ctx):
@@ -390,10 +492,20 @@ async def fursuit(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Fursuit')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Fursuit', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furhold(ctx):
@@ -404,10 +516,20 @@ async def furhold(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/hold')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/hold', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furhowl(ctx):
@@ -418,10 +540,20 @@ async def furhowl(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Howl')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Howl', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furhug(ctx, member: discord.User = 'null'):
@@ -432,11 +564,20 @@ async def furhug(ctx, member: discord.User = 'null'):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Hug')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Hug', timeout=5)
+        if r:
+            print (r.json())
 
-    await ctx.send('*awww*')
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
     ## thx for this flonky :3
 
@@ -471,10 +612,20 @@ async def furkiss(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Kiss')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Kiss', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furlick(ctx):
@@ -485,10 +636,20 @@ async def furlick(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Lick')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Lick', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furpropose(ctx):
@@ -499,10 +660,20 @@ async def furpropose(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Propose')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Propose', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furbulge(ctx):
@@ -513,10 +684,20 @@ async def furbulge(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Bulge')
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Bulge', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furyiffgay(ctx):
@@ -529,13 +710,20 @@ async def furyiffgay(ctx):
         color=DEFAULT_EMBED_COLOR
     )
 
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gay', timeout=5)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gay', timeout=5)
+        if r:
+            print (r.json())
 
-    print (r.json())
+            em.set_image(url=str(r.json()["images"][0]["url"]))
 
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-
-    await ctx.send(embed=em)
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furyiffstraight(ctx):
@@ -546,10 +734,20 @@ async def furyiffstraight(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Straight', timeout=5)
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Straight', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furyifflesbian(ctx):
@@ -560,10 +758,20 @@ async def furyifflesbian(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Lesbian', timeout=5)
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Lesbian', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 @bot.command()
 async def furyiffgynomorph(ctx):
@@ -574,10 +782,20 @@ async def furyiffgynomorph(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gynomorph', timeout=5)
-    print (r.json())
-    em.set_image(url=str(r.json()["images"][0]["url"]))
-    await ctx.send(embed=em)
+    try:
+        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gynomorph', timeout=5)
+        if r:
+            print (r.json())
+
+            em.set_image(url=str(r.json()["images"][0]["url"]))
+
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
 
 
 @bot.command()
@@ -677,7 +895,6 @@ async def remindme(ctx, *reminder):
         await ctx.reply(f"Hey, {ctx.message.author.name}. \nI should remind you to {reminder}.")
 
 bot.shut = False
-@bot.listen.cooldown(1, 2, commands.BucketType.user)
 @bot.listen('on_message')
 async def message(message):
     # we do not want the bot to reply to itself
