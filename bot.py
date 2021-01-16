@@ -24,6 +24,9 @@ from discord.guild import Guild
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
 from requests.models import ReadTimeoutError
+import platform,socket,psutil
+import time
+start = time.time()
 
 ##############################################################
 ##                  Loading dotenv Stuff                    ##
@@ -64,6 +67,8 @@ print(f"{bcolors.CYAN}starting Atari...{bcolors.ENDC}")
 ##############################################################
 
 bot = commands.Bot(command_prefix=BOT_PREFIX)
+## bot = commands.AutoShardedBot(shard_count=10, command_prefix=BOT_PREFIX)
+## It is recommended to use this client only if you have surpassed at least 1000 guilds.
 
 intents = discord.Intents(messages=True, guilds=True)
 intents.messages = True
@@ -71,7 +76,7 @@ intents.messages = True
 
 @bot.event
 async def on_ready():
-    print(f"{bcolors.PURPLE}{bot.user} has connected to Discord!\n{bcolors.ENDC}")
+    print(f"{bcolors.PURPLE}{bot.user} has connected to Discord!{bcolors.ENDC}")
 
     print ("------------------------------------")
     print (f"Bot Name: {bot.user.name}")
@@ -96,6 +101,7 @@ async def on_ready():
     )
     print(f'Guild Members:{guild.member_count}')
     print ("------------------------------------")
+    print(f"{bcolors.PURPLE}Started in {round(time.time()-start,2)} seconds.{bcolors.ENDC}\n")
     print ("\nMessage Log:")
 
 
@@ -168,7 +174,23 @@ async def ping(ctx):
     message = await ctx.reply("Pong!")
     ping1 = (time.monotonic() - before) * 1000
     await message.edit(content=f"Pong!  `{int(ping1)}ms`")
-    
+
+@bot.command(name="info", description="Sends info from os", aliases=['i'])
+async def info(ctx):
+    if str(ctx.channel.id) not in WHITELIST: return
+    message = await ctx.send(f"**Platform info**\n```architecture - {platform.machine()}```")
+    await message.edit(content=f"**Platform info**\n```architecture - {platform.machine()}\nversion - {platform.version()}```")
+    await message.edit(content=f"**Platform info**\n```architecture - {platform.machine()}\nversion - {platform.version()}\nrelease - {platform.release()}```")
+    await message.edit(content=f"**Platform info**\n```architecture - {platform.machine()}\nversion - {platform.version()}\nrelease - {platform.release()}\nplatform - {platform.system()}```")
+    await message.edit(content=f"**Platform info**\n```platform - {platform.system()}\nrelease - {platform.release()}\nversion - {platform.version()}\narchitecture - {platform.machine()}```")
+    await message.edit(content=f"**Platform info**\n```platform - {platform.system()}\nrelease - {platform.release()}\nversion - {platform.version()}\narchitecture - {platform.machine()}\nhostname - {socket.gethostname()}\ncollecting processor and ram info```")
+    await message.edit(content=f"**Platform info**\n```platform - {platform.system()}\nrelease - {platform.release()}\nversion - {platform.version()}\narchitecture - {platform.machine()}\nhostname - {socket.gethostname()}\ncollecting processor and ram info.```")
+    await message.edit(content=f"**Platform info**\n```platform - {platform.system()}\nrelease - {platform.release()}\nversion - {platform.version()}\narchitecture - {platform.machine()}\nhostname - {socket.gethostname()}\ncollecting processor and ram info..```")
+    await message.edit(content=f"**Platform info**\n```platform - {platform.system()}\nrelease - {platform.release()}\nversion - {platform.version()}\narchitecture - {platform.machine()}\nhostname - {socket.gethostname()}\ncollecting processor and ram info...```")
+    await message.edit(content=f"**Platform info**\n```platform - {platform.system()}\nrelease - {platform.release()}\nversion - {platform.version()}\narchitecture - {platform.machine()}\nhostname - {socket.gethostname()}\nprocessor - {platform.processor()}```")
+    ram = str(round(psutil.virtual_memory().total / (1024.0 **3)))+" GB"
+    await message.edit(content=f"**Platform info**\n```platform - {platform.system()}\nrelease - {platform.release()}\nversion - {platform.version()}\narchitecture - {platform.machine()}\nhostname - {socket.gethostname()}\nprocessor - {platform.processor()}\nram - {ram}```")
+
 
 @bot.command()
 async def whitelist(ctx):
@@ -223,6 +245,29 @@ async def say(ctx, *args):
     await ctx.message.delete()
     await ctx.send(resp)
 
+@bot.command(name="spam", description="uhhhhh yeah.")
+async def spam(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*blep*")
+    else:
+        await ctx.message.delete()
+        await ctx.send(f"*{member.mention}*")
+        await ctx.send(f"*{member.mention}*")
+        await ctx.send(f"*{member.mention}*")
+        await ctx.send(f"*{member.mention}*")
+        await ctx.send(f"*{member.mention}*")
+        deleted = await ctx.channel.purge(limit=6, check=None)
+
+
+@bot.command()
+async def clear(ctx, arg):
+    await ctx.message.delete()
+    deleted = await ctx.channel.purge(limit=int(arg), check=None)
+    await ctx.send('Deleted {} message(s)'.format(len(deleted)))
+
+    
+
 @bot.command(name="furinsult", description="insults you lol", aliases=['insult'])
 async def furinsult(ctx, member: discord.User = 'null'):
     if str(ctx.channel.id) not in WHITELIST: return
@@ -250,9 +295,7 @@ async def yiff(ctx):
         r = requests.get('http://www.sheri.bot/api/yiff/', timeout=5)
         if r:
             print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
+            em.set_image(url=str(r.json()["url"]))
             await ctx.send(embed=em)
     except requests.exceptions.ReadTimeout:
         await ctx.send('`Connection to api timed out.`')
@@ -274,9 +317,7 @@ async def wolf(ctx):
         r = requests.get('http://www.sheri.bot/api/wolves/', timeout=5)
         if r:
             print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
+            em.set_image(url=str(r.json()["url"]))
             await ctx.send(embed=em)
     except requests.exceptions.ReadTimeout:
         await ctx.send('`Connection to api timed out.`')
@@ -298,9 +339,7 @@ async def tiger(ctx):
         r = requests.get('http://www.sheri.bot/api/tiger/', timeout=5)
         if r:
             print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
+            em.set_image(url=str(r.json()["url"]))
             await ctx.send(embed=em)
     except requests.exceptions.ReadTimeout:
         await ctx.send('`Connection to api timed out.`')
@@ -322,9 +361,7 @@ async def mur(ctx):
         r = requests.get('http://www.sheri.bot/api/mur/', timeout=5)
         if r:
             print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
+            em.set_image(url=str(r.json()["url"]))
             await ctx.send(embed=em)
     except requests.exceptions.ReadTimeout:
         await ctx.send('`Connection to api timed out.`')
@@ -346,9 +383,7 @@ async def lion(ctx):
         r = requests.get('http://www.sheri.bot/api/lion/', timeout=5)
         if r:
             print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
+            em.set_image(url=str(r.json()["url"]))
             await ctx.send(embed=em)
     except requests.exceptions.ReadTimeout:
         await ctx.send('`Connection to api timed out.`')
@@ -370,9 +405,7 @@ async def husky(ctx):
         r = requests.get('http://www.sheri.bot/api/husky/', timeout=5)
         if r:
             print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
+            em.set_image(url=str(r.json()["url"]))
             await ctx.send(embed=em)
     except requests.exceptions.ReadTimeout:
         await ctx.send('`Connection to api timed out.`')
@@ -394,9 +427,7 @@ async def fox(ctx):
         r = requests.get('http://www.sheri.bot/api/fox/', timeout=5)
         if r:
             print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
+            em.set_image(url=str(r.json()["url"]))
             await ctx.send(embed=em)
     except requests.exceptions.ReadTimeout:
         await ctx.send('`Connection to api timed out.`')
