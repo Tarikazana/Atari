@@ -245,7 +245,7 @@ async def yiff(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('http://www.sheri.bot/api/yiff/')
+    r = requests.get('http://www.sheri.bot/api/yiff/', timeout=5)
     print (r.json())
     em.set_image(url=str(r.json()["url"]))
     await ctx.send(embed=em)
@@ -453,7 +453,7 @@ async def vore(ctx, member: discord.User = None):
     if member == ctx.message.author or member == None:
         await ctx.send(f"**Swallows {ctx.message.author.name} whole**")
         return
-    if member.id == 349471395685859348 and ctx.message.author.id != 289802289638539274:
+    if member.id == 349471395685859348 and ctx.message.author.id != 289802289638539274 or member.id == 563703335639711765:
         await ctx.send(f"Heh, you would like that eh :3")
         return
     if member.id == bot.user.id:
@@ -520,6 +520,7 @@ async def furbulge(ctx):
 
 @bot.command()
 async def furyiffgay(ctx):
+
     if str(ctx.channel.id) not in WHITELIST: return
 
     em = discord.Embed(
@@ -527,9 +528,13 @@ async def furyiffgay(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gay')
+
+    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gay', timeout=5)
+
     print (r.json())
+
     em.set_image(url=str(r.json()["images"][0]["url"]))
+
     await ctx.send(embed=em)
 
 @bot.command()
@@ -541,7 +546,7 @@ async def furyiffstraight(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Straight')
+    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Straight', timeout=5)
     print (r.json())
     em.set_image(url=str(r.json()["images"][0]["url"]))
     await ctx.send(embed=em)
@@ -555,7 +560,7 @@ async def furyifflesbian(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Lesbian')
+    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Lesbian', timeout=5)
     print (r.json())
     em.set_image(url=str(r.json()["images"][0]["url"]))
     await ctx.send(embed=em)
@@ -569,7 +574,7 @@ async def furyiffgynomorph(ctx):
         description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gynomorph')
+    r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gynomorph', timeout=5)
     print (r.json())
     em.set_image(url=str(r.json()["images"][0]["url"]))
     await ctx.send(embed=em)
@@ -672,6 +677,7 @@ async def remindme(ctx, *reminder):
         await ctx.reply(f"Hey, {ctx.message.author.name}. \nI should remind you to {reminder}.")
 
 bot.shut = False
+@bot.listen.cooldown(1, 2, commands.BucketType.user)
 @bot.listen('on_message')
 async def message(message):
     # we do not want the bot to reply to itself
@@ -711,11 +717,11 @@ async def message(message):
     
     if bot.shut==True: return
 
-    if content.upper().startswith('E') and rnd > 49:
+    if content.upper() == 'E' and rnd > 49:
         await message.channel.send('A')
         await message.channel.send('Sports')
 
-    if content.upper().startswith('E') and rnd < 50:
+    if content.upper() == 'E' and rnd < 50:
         await message.channel.send('6')
         await message.channel.send('2')
         await message.channel.send('1')
