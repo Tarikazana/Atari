@@ -8,6 +8,7 @@ import asyncio
 import os
 import random
 import re
+from discord import errors
 import requests
 import json
 import discord, datetime, time
@@ -26,6 +27,7 @@ from dotenv import load_dotenv
 from requests.models import ReadTimeoutError
 import platform,socket,psutil
 import time
+import aiohttp
 start = time.time()
 
 ##############################################################
@@ -49,9 +51,13 @@ print(f"{bcolors.CYAN}loading dotenv content...{bcolors.ENDC}")
 load_dotenv()   #loads stuff from .env
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
+GUILD_ID = os.getenv('GUILD_ID')
 BOT_VERSION = os.getenv('BOT_VERSION')
 BOT_PREFIX = os.getenv('PREFIX')
 WHITELIST = os.getenv('SERVER_WHITELIST')
+SHERI_API_KEY = os.getenv('SHERI_API_KEY')
+E621_API_KEY = os.getenv('E621_API_KEY')
+E621_USER = os.getenv('E621_USER')
 
 DEFAULT_EMBED_COLOR = discord.Colour(0xfc03ad)
 print('done.')
@@ -61,6 +67,12 @@ print('done.')
 ##############################################################
 
 print(f"{bcolors.CYAN}starting Atari...{bcolors.ENDC}")
+print(f"{bcolors.CYAN}   _____   __               .__ {bcolors.ENDC}")
+print(f"{bcolors.CYAN}  /  _  \_/  |______ _______|__|{bcolors.ENDC}")
+print(f"{bcolors.CYAN} /  /_\  \   __\__  \\\\_  __ \  |{bcolors.ENDC}")
+print(f"{bcolors.CYAN}/    |    \  |  / __ \|  | \/  |{bcolors.ENDC}")
+print(f"{bcolors.CYAN}\____|__  /__| (____  /__|  |__|{bcolors.ENDC}")
+print(f"{bcolors.CYAN}        \/          \/          {bcolors.ENDC}")
 
 ##############################################################
 ##                  Specify bot prefix in .env              ##
@@ -73,6 +85,8 @@ bot = commands.Bot(command_prefix=BOT_PREFIX)
 intents = discord.Intents(messages=True, guilds=True)
 intents.messages = True
 
+session = None
+
 
 @bot.event
 async def on_ready():
@@ -81,6 +95,7 @@ async def on_ready():
     print ("------------------------------------")
     print (f"Bot Name: {bot.user.name}")
     print (f"Bot ID: {bot.user.id}")
+    print (f"Bot Created: {bot.user.created_at}")
     print (f"Discord Version: {discord.__version__}")
     print (f"Bot Version: {BOT_VERSION}")
     print ("------------------------------------")
@@ -126,6 +141,7 @@ async def help(ctx):
     em.set_thumbnail(url=bot.user.avatar_url)
     em.set_image(url=bot.user.avatar_url)
     em.add_field(name=BOT_PREFIX + "help", value="Shows this message\nalias: " + BOT_PREFIX + "h", inline=False)
+    em.add_field(name=BOT_PREFIX + "images", value="Image help", inline=False)
     em.add_field(name=BOT_PREFIX + "ping", value="Sends a ping to the bot and returns an value in `ms`\nalias: " + BOT_PREFIX + "p", inline=False)
     em.add_field(name=BOT_PREFIX + "shut", value="Tell Atari to shut up for 10 minutes. Status gets displayed.", inline=False)
     em.add_field(name=BOT_PREFIX + "say", value="Say smth with the bot.\n`No mentions please.`", inline=False)
@@ -136,35 +152,108 @@ async def help(ctx):
     await ctx.message.delete()
     await ctx.send(embed=em)
 
+@bot.command(name="images", description="Image help")
+async def images(ctx):
+    if str(ctx.channel.id) not in WHITELIST: return
     em = discord.Embed(
         title="- Images -",
-        description="**Commands**",
+        description=None,
         color=DEFAULT_EMBED_COLOR
     )
-    em.add_field(name=BOT_PREFIX + "fursuit", value="Returns a fursuit image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "fox", value="Returns a fox image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "husky", value="Returns a husky image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "lion", value="Returns a lion image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "mur", value="Returns a mur image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "tiger", value="Returns a tiger image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "wolf", value="Returns a wolf image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furboop", value="Returns a boop image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furcuddle", value="Returns a cuddle image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furflop", value="Returns a flop image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furhowl", value="Returns a howl image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furhold", value="Returns a hold image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furhug", value="Returns a hug image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furkiss", value="Returns a kiss image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furlick", value="Returns a lick image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furpropose", value="Returns a propose image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furbulge", value="Returns a bulge image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furyiffgay", value="Returns a gay yiff image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furyiffstraight", value="Returns a straight yiff image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furyifflesbian", value="Returns a lesbian yiff image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "furyiffgynomorph", value="Returns a gynomorph yiff image.", inline=False)
-    em.add_field(name=BOT_PREFIX + "yiff", value="Returns a yiff image from Sheri's api.", inline=False)
+    em.add_field(name="**NSFW**", value=BOT_PREFIX + "sixnine\n" 
+    + BOT_PREFIX + "anal\n" 
+    + BOT_PREFIX + "bang\n" 
+    + BOT_PREFIX + "bisexual\n"
+    + BOT_PREFIX + "booty\n"
+    + BOT_PREFIX + "christmas\n"
+    + BOT_PREFIX + "cumflation\n"
+    + BOT_PREFIX + "cuntboy\n"
+    + BOT_PREFIX + "dick\n"
+    + BOT_PREFIX + "dp\n"
+    + BOT_PREFIX + "fbound\n"
+    + BOT_PREFIX + "fcreampie\n"
+    + BOT_PREFIX + "femboypresentation\n"
+    + BOT_PREFIX + "finger\n"
+    + BOT_PREFIX + "fpresentation\n"
+    + BOT_PREFIX + "fseduce\n"
+    + BOT_PREFIX + "fsolo\n"
+    + BOT_PREFIX + "ftease\n"
+    + BOT_PREFIX + "futabang\n"
+    + BOT_PREFIX + "gay\n"
+    + BOT_PREFIX + "gif\n"
+    + BOT_PREFIX + "lesbian\n"
+    + BOT_PREFIX + "maws\n"
+    + BOT_PREFIX + "mbound\n"
+    + BOT_PREFIX + "mcreampie\n"
+    + BOT_PREFIX + "mpresentation\n"
+    + BOT_PREFIX + "mseduce\n"
+    + BOT_PREFIX + "msolo\n"
+    + BOT_PREFIX + "mtease\n"
+    + BOT_PREFIX + "nboop\n"
+    + BOT_PREFIX + "nbulge\n"
+    + BOT_PREFIX + "ncomics\n"
+    + BOT_PREFIX + "ncuddle\n"
+    + BOT_PREFIX + "nfemboy\n"
+    + BOT_PREFIX + "nfuta\n"
+    + BOT_PREFIX + "ngroup\n"
+    + BOT_PREFIX + "nhold\n"
+    + BOT_PREFIX + "nhug\n"
+    + BOT_PREFIX + "nlick\n"
+    + BOT_PREFIX + "npokemon\n"
+    + BOT_PREFIX + "nprotogen\n"
+    + BOT_PREFIX + "nseduce\n"
+    + BOT_PREFIX + "nsfwselfies\n"
+    + BOT_PREFIX + "nsolo\n"
+    + BOT_PREFIX + "ntease\n"
+    + BOT_PREFIX + "ntrap\n"
+    + BOT_PREFIX + "pawjob\n"
+    + BOT_PREFIX + "petplay\n"
+    + BOT_PREFIX + "ride\n"
+    + BOT_PREFIX + "suck\n"
+    + BOT_PREFIX + "toys\n"
+    + BOT_PREFIX + "vore\n"
+    + BOT_PREFIX + "yiff\n"
 
-    em.set_footer(text="Requested by " + ctx.message.author.name + "", icon_url=ctx.message.author.avatar_url)
+    , inline=True)
+
+    em.add_field(name="**SFW**", value=BOT_PREFIX + "bellyrub\n" 
+    + BOT_PREFIX + "blep\n"
+    + BOT_PREFIX + "boop\n"
+    + BOT_PREFIX + "cry\n"
+    + BOT_PREFIX + "cuddle\n"
+    + BOT_PREFIX + "hold\n"
+    + BOT_PREFIX + "howl\n"
+    + BOT_PREFIX + "hug\n"
+    + BOT_PREFIX + "kiss\n"
+    + BOT_PREFIX + "lick\n"
+    + BOT_PREFIX + "pat\n"
+    + BOT_PREFIX + "paws\n"
+    + BOT_PREFIX + "pokemon\n"
+    + BOT_PREFIX + "proposal\n"
+    + BOT_PREFIX + "trickortreat\n"
+
+    , inline=True)
+
+    em.add_field(name="**PUBLIC**", value=BOT_PREFIX + "bunny\n" 
+    + BOT_PREFIX + "cat\n"
+    + BOT_PREFIX + "deer\n"
+    + BOT_PREFIX + "fox\n"
+    + BOT_PREFIX + "husky\n"
+    + BOT_PREFIX + "lion\n"
+    + BOT_PREFIX + "mur\n"
+    + BOT_PREFIX + "nature\n"
+    + BOT_PREFIX + "rpanda\n"
+    + BOT_PREFIX + "shiba\n"
+    + BOT_PREFIX + "snek\n"
+    + BOT_PREFIX + "snep\n"
+    + BOT_PREFIX + "tiger\n"
+    + BOT_PREFIX + "wolf\n"
+    + BOT_PREFIX + "yeen\n"
+    + BOT_PREFIX + "fursuit\n"
+
+    , inline=True)
+
+    em.set_footer(text="Requested by " + ctx.message.author.name + "")
     await ctx.send(embed=em)
 
 @bot.command(name="ping", description="Sends a ping to the bot and returns an value in `ms`", aliases=['p'])
@@ -212,18 +301,30 @@ async def whitelist(ctx):
 
 @bot.command()
 async def add(ctx):
-    f = open(".env", "a")
-    f.write(f", {ctx.channel.id}")
-    f.close()
-    em = discord.Embed(
-        title="Channel added.",
-        description="Atari must be restarted in order to apply changes.",
-        color=DEFAULT_EMBED_COLOR
-    )
-    
-    em.set_footer(text="Requested by " + ctx.message.author.name + "", icon_url=ctx.message.author.avatar_url)
-    await ctx.message.delete()
-    await ctx.send(embed=em)
+    guildid=str(ctx.message.guild.id)
+    authorid=str(ctx.message.author.id)
+    if guildid == GUILD_ID and authorid == '349471395685859348':
+        with open(".env", "r") as read_obj:
+            # Read all lines in the file one by one
+            for line in read_obj:
+                # For each line, check if line contains the string
+                if str(ctx.channel.id) in line:
+                    await ctx.send('Channel already added.')
+                    return
+        f = open(".env", "a")
+        f.write(f", {ctx.channel.id}")
+        f.close()
+        em = discord.Embed(
+            title="Channel added.",
+            description="Atari must be restarted in order to apply changes.",
+            color=DEFAULT_EMBED_COLOR
+        )
+        
+        em.set_footer(text="Requested by " + ctx.message.author.name + "", icon_url=ctx.message.author.avatar_url)
+        await ctx.message.delete()
+        await ctx.send(embed=em)
+    else:
+        await ctx.send('Only <@!349471395685859348> can use this.')
 
 @bot.command()
 async def say(ctx, *args):
@@ -282,237 +383,469 @@ async def furinsult(ctx, member: discord.User = 'null'):
     else:
         await ctx.send(f"*Fuck you {member.name}*")
 
+async def sheri_api_nsfw(ctx, api_url):
+    if str(ctx.channel.id) not in WHITELIST: return
+    if ctx.channel.is_nsfw():
+        em = discord.Embed(
+            title=None,
+            description=None,
+            color=discord.Colour(0x000000)
+        )
+        try:
+            url = api_url
+            headers = {'Authorization': 'Token '+SHERI_API_KEY}
+            r = requests.get(url, headers=headers, timeout=5)
+            print(r)
+            if r:
+                print (r.json())
+                em.set_image(url=str(r.json()["url"]))
+                em.set_author(name=">> Link", url=str(r.json()["url"]))
+                await ctx.send(embed=em)
+        except requests.exceptions.ReadTimeout:
+            await ctx.send('`Connection to api timed out.`')
+            return
+        except requests.exceptions.ConnectionError:
+            await ctx.send('`Connection error.`')
+            return
+    else:
+        await ctx.send("`NSFW. You can't use that command here.`")
+        return
+
+async def sheri_api_sfw(ctx, api_url):
+    if str(ctx.channel.id) not in WHITELIST: return
+    em = discord.Embed(
+        title=None,
+        description=None,
+        color=discord.Colour(0x000000)
+    )
+    try:
+        url = api_url
+        headers = {'Authorization': 'Token '+SHERI_API_KEY}
+        r = requests.get(url, headers=headers, timeout=5)
+        if r:
+            print (r.json())
+            em.set_image(url=str(r.json()["url"]))
+            em.set_author(name=">> Link", url=str(r.json()["url"]))
+            await ctx.send(embed=em)
+    except requests.exceptions.ReadTimeout:
+        await ctx.send('`Connection to api timed out.`')
+        return
+    except requests.exceptions.ConnectionError:
+        await ctx.send('`Connection error.`')
+        return
+
+
+## Sheri api // nsfw
+
+@bot.command()
+async def sixnine(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/69", ctx=ctx)
+
+@bot.command()
+async def anal(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/anal", ctx=ctx)
+
+@bot.command()
+async def bang(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/bang", ctx=ctx)
+
+@bot.command()
+async def bisexual(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/bisexual", ctx=ctx)
+
+@bot.command()
+async def boob(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/boob", ctx=ctx)
+
+@bot.command()
+async def boobwank(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/boobwank", ctx=ctx)
+
+@bot.command()
+async def booty(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/booty", ctx=ctx)
+
+@bot.command()
+async def christmas(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/christmas", ctx=ctx)
+
+@bot.command()
+async def cumflation(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/cumflation", ctx=ctx)
+
+@bot.command()
+async def cuntboy(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/cuntboy", ctx=ctx)
+
+@bot.command()
+async def dick(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/dick", ctx=ctx)
+
+@bot.command()
+async def dp(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/dp", ctx=ctx)
+
+@bot.command()
+async def fbound(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/fbound", ctx=ctx)
+
+@bot.command()
+async def fcreampie(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/fcreampie", ctx=ctx)
+
+@bot.command()
+async def femboypresentation(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/femboypresentation", ctx=ctx)
+
+@bot.command()
+async def finger(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/finger", ctx=ctx)
+
+@bot.command()
+async def fpresentation(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/fpresentation", ctx=ctx)
+
+@bot.command()
+async def fseduce(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/fseduce", ctx=ctx)
+
+@bot.command()
+async def fsolo(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/fsolo", ctx=ctx)
+
+@bot.command()
+async def ftease(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/ftease", ctx=ctx)
+
+@bot.command()
+async def futabang(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/futabang", ctx=ctx)
+
+@bot.command()
+async def gay(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/gay", ctx=ctx)
+
+@bot.command()
+async def gif(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/gif", ctx=ctx)
+
+@bot.command()
+async def lesbian(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/lesbian", ctx=ctx)
+
+@bot.command()
+async def mbound(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/mbound", ctx=ctx)
+
+@bot.command()
+async def mcreampie(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/mcreampie", ctx=ctx)
+
+@bot.command()
+async def mpresentation(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/mpresentation", ctx=ctx)
+
+@bot.command()
+async def mseduce(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/mseduce", ctx=ctx)
+
+@bot.command()
+async def msolo(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/msolo", ctx=ctx)
+
+@bot.command()
+async def mtease(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/mtease", ctx=ctx)
+
+@bot.command()
+async def nbulge(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nbulge", ctx=ctx)
+
+@bot.command()
+async def ncomics(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/ncomics", ctx=ctx)
+
+@bot.command()
+async def ncuddle(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/ncuddle", ctx=ctx)
+
+@bot.command()
+async def nfemboy(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nfemboy", ctx=ctx)
+
+@bot.command()
+async def nfuta(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nfuta", ctx=ctx)
+
+@bot.command()
+async def ngroup(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/ngroup", ctx=ctx)
+
+@bot.command()
+async def nhold(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nhold", ctx=ctx)
+
+@bot.command()
+async def npokemon(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/npokemon", ctx=ctx)
+
+@bot.command()
+async def nprotogen(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nprotogen", ctx=ctx)
+
+@bot.command()
+async def nseduce(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nseduce", ctx=ctx)
+
+@bot.command()
+async def nsfwselfies(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nsfwselfies", ctx=ctx)
+
+@bot.command()
+async def nsolo(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nsolo", ctx=ctx)
+
+@bot.command()
+async def ntease(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/ntease", ctx=ctx)
+
+@bot.command()
+async def ntrap(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/ntrap", ctx=ctx)
+
+@bot.command()
+async def pawjob(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/pawjob", ctx=ctx)
+
+@bot.command()
+async def petplay(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/petplay", ctx=ctx)
+
+@bot.command()
+async def ride(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/ride", ctx=ctx)
+
+@bot.command()
+async def suck(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/suck", ctx=ctx)
+
+@bot.command()
+async def toys(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/toys", ctx=ctx)
+
+@bot.command()
+async def vore(ctx, member: discord.User = None):
+    if str(ctx.channel.id) not in WHITELIST: return
+    print(member)
+    if member == ctx.message.author or member == None:
+        await ctx.send(f"**Swallows {ctx.message.author.name} whole**")
+        await sheri_api_nsfw(api_url="https://www.sheri.bot/api/vore", ctx=ctx)
+        return
+    if member.id == 349471395685859348 and ctx.message.author.id != 289802289638539274 or member.id == 563703335639711765:
+        await ctx.send(f"Heh, you would like that eh :3")
+        return
+    if member.id == bot.user.id:
+        await ctx.send("nuuuu qwq")
+    else:
+        await ctx.send(f"**{ctx.message.author.name} swallows {member.mention} whole**")
+        await sheri_api_nsfw(api_url="https://www.sheri.bot/api/vore", ctx=ctx)
+        return
+
 @bot.command()
 async def yiff(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/yiff", ctx=ctx)
 
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('http://www.sheri.bot/api/yiff/', timeout=5)
-        if r:
-            print (r.json())
-            em.set_image(url=str(r.json()["url"]))
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+
+## Sheri api // sfw
 
 @bot.command()
-async def wolf(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('http://www.sheri.bot/api/wolves/', timeout=5)
-        if r:
-            print (r.json())
-            em.set_image(url=str(r.json()["url"]))
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+async def bellyrub(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/belly_rub", ctx=ctx)
 
 @bot.command()
-async def tiger(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('http://www.sheri.bot/api/tiger/', timeout=5)
-        if r:
-            print (r.json())
-            em.set_image(url=str(r.json()["url"]))
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+async def blep(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/blep", ctx=ctx)
 
 @bot.command()
-async def mur(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('http://www.sheri.bot/api/mur/', timeout=5)
-        if r:
-            print (r.json())
-            em.set_image(url=str(r.json()["url"]))
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+async def cry(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/cry", ctx=ctx)
 
 @bot.command()
-async def lion(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('http://www.sheri.bot/api/lion/', timeout=5)
-        if r:
-            print (r.json())
-            em.set_image(url=str(r.json()["url"]))
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+async def cuddle(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/cuddle", ctx=ctx)
 
 @bot.command()
-async def husky(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
+async def hold(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/hold", ctx=ctx)
 
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('http://www.sheri.bot/api/husky/', timeout=5)
-        if r:
-            print (r.json())
-            em.set_image(url=str(r.json()["url"]))
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+@bot.command()
+async def maws(ctx):
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/maws", ctx=ctx)
+
+@bot.command()
+async def pat(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/pat", ctx=ctx)
+
+@bot.command()
+async def paws(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/paws", ctx=ctx)
+
+@bot.command()
+async def pokemon(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/pokemon", ctx=ctx)
+
+@bot.command()
+async def proposal(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/proposal", ctx=ctx)
+
+@bot.command()
+async def trickortreat(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/trickortreat", ctx=ctx)
+
+## Sheri api // public
+
+@bot.command()
+async def bunny(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/bunny", ctx=ctx)
+
+@bot.command()
+async def cat(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/cat", ctx=ctx)
+
+@bot.command()
+async def deer(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/deer", ctx=ctx)
 
 @bot.command()
 async def fox(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('http://www.sheri.bot/api/fox/', timeout=5)
-        if r:
-            print (r.json())
-            em.set_image(url=str(r.json()["url"]))
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/fox", ctx=ctx)
 
 @bot.command()
-async def furboop(ctx, member: discord.User = 'null'):
+async def husky(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/husky", ctx=ctx)
+
+@bot.command()
+async def lion(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/lion", ctx=ctx)
+
+@bot.command()
+async def mur(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/mur", ctx=ctx)
+
+@bot.command()
+async def nature(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/nature", ctx=ctx)
+
+@bot.command()
+async def rpanda(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/rpanda", ctx=ctx)
+
+@bot.command()
+async def shiba(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/shiba", ctx=ctx)
+
+@bot.command()
+async def snek(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/snek", ctx=ctx)
+
+@bot.command()
+async def snep(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/snep", ctx=ctx)
+
+@bot.command()
+async def tiger(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/tiger", ctx=ctx)
+
+@bot.command()
+async def wolf(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/wolves", ctx=ctx)
+
+@bot.command()
+async def yeen(ctx):
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/yeen", ctx=ctx)
+
+
+
+
+@bot.command()
+async def boop(ctx, member: discord.User = 'null'):
     if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Boop', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
 
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Boops {ctx.message.author.name}*")
     else:
         await ctx.send(f"*{ctx.message.author.name} boops {member.mention}*")
-    await ctx.send(embed=em)
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/boop", ctx=ctx)
 
 @bot.command()
-async def furcuddle(ctx):
+async def nboop(ctx, member: discord.User = 'null'):
     if str(ctx.channel.id) not in WHITELIST: return
 
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Cuddle', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Boops {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} boops {member.mention}*")
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nboop", ctx=ctx)
 
 @bot.command()
-async def furflop(ctx):
+async def hug(ctx, member: discord.User = 'null'):
     if str(ctx.channel.id) not in WHITELIST: return
 
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Flop', timeout=5)
-        if r:
-            print (r.json())
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Hugs {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} hugs {member.mention}*")
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/hug", ctx=ctx)
 
-            em.set_image(url=str(r.json()["images"][0]["url"]))
+@bot.command()
+async def nhug(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
 
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Hugs {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} hugs {member.mention}*")
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nhug", ctx=ctx)
+
+@bot.command()
+async def kiss(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Kisses {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} kisses {member.mention}*")
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/kiss", ctx=ctx)
+
+@bot.command()
+async def nkiss(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Kisses {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} kisses {member.mention}*")
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nkiss", ctx=ctx)
+
+@bot.command()
+async def lick(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Licks {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} licks {member.mention}*")
+    await sheri_api_sfw(api_url="https://www.sheri.bot/api/lick", ctx=ctx)
+
+@bot.command()
+async def nlick(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+
+    if member == ctx.message.author or member == 'null':
+        await ctx.send(f"*Licks {ctx.message.author.name}*")
+    else:
+        await ctx.send(f"*{ctx.message.author.name} licks {member.mention}*")
+    await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nlick", ctx=ctx)
 
 @bot.command()
 async def fursuit(ctx):
@@ -539,31 +872,7 @@ async def fursuit(ctx):
         return
 
 @bot.command()
-async def furhold(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/hold', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furhowl(ctx):
+async def howl(ctx):
     if str(ctx.channel.id) not in WHITELIST: return
 
     em = discord.Embed(
@@ -584,250 +893,7 @@ async def furhowl(ctx):
         return
     except requests.exceptions.ConnectionError:
         await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furhug(ctx, member: discord.User = 'null'):
-    if str(ctx.channel.id) not in WHITELIST: return
-    
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Hug', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-    ## thx for this flonky :3
-
-    if member == ctx.message.author or member == 'null':
-        await ctx.send(f"*Hugs {ctx.message.author.name}*")
-    else:
-        await ctx.send(f"*{ctx.message.author.name} hugs {member.mention}*")
-    await ctx.send(embed=em)
-
-@bot.command()
-async def vore(ctx, member: discord.User = None):
-    if str(ctx.channel.id) not in WHITELIST: return
-    print(member)
-    if member == ctx.message.author or member == None:
-        await ctx.send(f"**Swallows {ctx.message.author.name} whole**")
-        return
-    if member.id == 349471395685859348 and ctx.message.author.id != 289802289638539274 or member.id == 563703335639711765:
-        await ctx.send(f"Heh, you would like that eh :3")
-        return
-    if member.id == bot.user.id:
-        await ctx.send("nuuuu qwq")
-    else:
-        await ctx.send(f"**{ctx.message.author.name} swallows {member.mention} whole**")
-    
-
-@bot.command()
-async def furkiss(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Kiss', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furlick(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Lick', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furpropose(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Propose', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furbulge(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Bulge', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furyiffgay(ctx):
-
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gay', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furyiffstraight(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Straight', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furyifflesbian(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Lesbian', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
-@bot.command()
-async def furyiffgynomorph(ctx):
-    if str(ctx.channel.id) not in WHITELIST: return
-
-    em = discord.Embed(
-        title=None,
-        description=None,
-        color=DEFAULT_EMBED_COLOR
-    )
-    try:
-        r = requests.get('https://yiff.rest/V2/Furry/Yiff/Gynomorph', timeout=5)
-        if r:
-            print (r.json())
-
-            em.set_image(url=str(r.json()["images"][0]["url"]))
-
-            await ctx.send(embed=em)
-    except requests.exceptions.ReadTimeout:
-        await ctx.send('`Connection to api timed out.`')
-        return
-    except requests.exceptions.ConnectionError:
-        await ctx.send('`Connection error.`')
-        return
-
+        return 
 
 @bot.command()
 async def textbox(ctx,*text):
@@ -1153,14 +1219,14 @@ async def message(message):
         if 'ATARI' in content.upper() and 'NOT NOT' in content.upper():
                 await message.channel.send("**not not**".format(message))
                 return
-        if 'ATARI' in content.upper() and 'CUTE' in content.upper() and not "AREN'T" in content.upper() and not "CUTEN'T" in content.upper() and not "NOT" in content.upper():
+        if 'ATARI' in content.upper() and ('CUTE' in content.upper() or 'CUTIE' in content.upper()) and not "AREN'T" in content.upper() and not "CUTEN'T" in content.upper() and not "CUTIEN'T" in content.upper() and not "NOT" in content.upper():
             await message.channel.send("aaaaaaaaaa")
             await message.channel.send("You're cuteee")
             return
-        if 'ATARI' in content.upper() and 'CUTE' in content.upper() and ("AREN'T" in content.upper() or "CUTEN'T" in content.upper() or "NOT" in content.upper()) and rnd > 49:
+        if 'ATARI' in content.upper() and ('CUTE' in content.upper() or 'CUTIE' in content.upper()) and ("AREN'T" in content.upper() or "CUTEN'T" in content.upper() or "CUTIEN'T" in content.upper() or "NOT" in content.upper()) and rnd > 49:
             await message.channel.send("qwq".format(message))
             return
-        if 'ATARI' in content.upper() and 'CUTE' in content.upper() and ("AREN'T" in content.upper() or "CUTEN'T" in content.upper() or "NOT" in content.upper()) and rnd < 50:
+        if 'ATARI' in content.upper() and ('CUTE' in content.upper() or 'CUTIE' in content.upper()) and ("AREN'T" in content.upper() or "CUTEN'T" in content.upper() or "CUTIEN'T" in content.upper() or "NOT" in content.upper()) and rnd < 50:
             await message.channel.send("But...".format(message))
             await message.channel.send("But...".format(message))
             await message.channel.send("But you are.".format(message))
@@ -1175,16 +1241,16 @@ async def message(message):
             if 'NOT NOT' in msg.content.upper():
                 await message.channel.send("**not not**".format(msg))
                 return
-            if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and not "NOT" in msg.content.upper() and not "IS" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "IS" in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "IS" in msg.content.upper():
-                await message.channel.send("You're cute aswell, {0.author.name}.".format(msg))
-                return
-            if msg.content.upper().startswith("YOU'RE NOT CUTE") and rnd > 49 or "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd > 49 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd > 49:
+            if msg.content.upper().startswith("YOU'RE NOT CUTE") and rnd > 49 or msg.content.upper().startswith("YOU'RE NOT A CUTIE") and rnd > 49 or "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd > 49 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd > 49:
                 await message.channel.send("qwq".format(msg))
                 return
-            if msg.content.upper().startswith("YOU'RE NOT CUTE") and rnd < 50 or "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd < 50 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd < 50:
+            if msg.content.upper().startswith("YOU'RE NOT CUTE") and rnd < 50 or msg.content.upper().startswith("YOU'RE NOT A CUTIE") and rnd < 50 or "AREN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and rnd < 50 or "CUTEN'T" in msg.content.upper() and not 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and rnd < 50:
                 await message.channel.send("But...".format(msg))
                 await message.channel.send("But...".format(msg))
                 await message.channel.send("But you are.".format(msg))
+                return
+            if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() or 'CUTIE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and not "NOT" in msg.content.upper() and not "IS" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "IS" in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "IS" in msg.content.upper():
+                await message.channel.send("You're cute aswell, {0.author.name}.".format(msg))
                 return
             if 'HRU' in msg.content.upper() or 'HOW ARE YOU' in msg.content.upper():
                 await message.channel.send("I'm finee, {0.author.name}.".format(msg))
