@@ -56,6 +56,7 @@ BOT_VERSION = os.getenv('BOT_VERSION')
 BOT_PREFIX = os.getenv('PREFIX')
 WHITELIST = os.getenv('SERVER_WHITELIST')
 SHERI_API_KEY = os.getenv('SHERI_API_KEY')
+FURRYV2_API_KEY = os.getenv('FURRYV2_API_KEY')
 E621_API_KEY = os.getenv('E621_API_KEY')
 E621_USER = os.getenv('E621_USER')
 
@@ -324,7 +325,10 @@ async def add(ctx):
         await ctx.message.delete()
         await ctx.send(embed=em)
     else:
-        await ctx.send('Only <@!349471395685859348> can use this.')
+        if guildid == GUILD_ID:
+            await ctx.send('Only <@!349471395685859348> can use this.')
+            return
+        else: return
 
 @bot.command()
 async def say(ctx, *args):
@@ -857,7 +861,10 @@ async def fursuit(ctx):
         color=DEFAULT_EMBED_COLOR
     )
     try:
-        r = requests.get('https://yiff.rest/V2/Furry/Fursuit', timeout=5)
+        headers = {'Authorization': FURRYV2_API_KEY, "User-Agent": "Atari/4.0.0 (https://twitter.com/Tarikazana, https://github.com/Tarikazana/Atari)"}
+        r = requests.get('https://yiff.rest/V2/Furry/Fursuit', headers=headers, timeout=5)
+        print(r)
+        print(headers)
         if r:
             print (r.json())
 
@@ -881,7 +888,8 @@ async def howl(ctx):
         color=DEFAULT_EMBED_COLOR
     )
     try:
-        r = requests.get('https://yiff.rest/V2/Furry/Howl', timeout=5)
+        headers = {'Authorization': FURRYV2_API_KEY, "User-Agent": "Atari/4.0.0 (https://twitter.com/Tarikazana)"}
+        r = requests.get('https://yiff.rest/V2/Furry/Howl', headers=headers, timeout=5)
         if r:
             print (r.json())
 
