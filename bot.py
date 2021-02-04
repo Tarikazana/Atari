@@ -13,11 +13,12 @@ import requests
 import json
 import discord, datetime, time
 from discord import message
+from discord.utils import get
 from discord import TextChannel
 from discord import channel
 from discord.activity import Game
 from discord.enums import Status
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.abc import GuildChannel
 from discord.ext.commands.converter import TextChannelConverter
 from discord.ext.commands.core import has_permissions
@@ -25,9 +26,11 @@ from discord.guild import Guild
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
 from requests.models import ReadTimeoutError
+from random import choice
 import platform,socket,psutil
 import time
 import aiohttp
+from datetime import datetime
 start = time.time()
 
 ##############################################################
@@ -88,10 +91,16 @@ intents.messages = True
 
 session = None
 
+status = ["Tawi", "_help"]
+
+bot.automation = False
 
 @bot.event
 async def on_ready():
-    print(f"{bcolors.PURPLE}{bot.user} has connected to Discord!{bcolors.ENDC}")
+    # current date and time
+    now = datetime.now()
+    timestamp = round(datetime.timestamp(now))
+    print(f"{bcolors.PURPLE}{datetime.fromtimestamp(timestamp)} - {bot.user} has connected to Discord!{bcolors.ENDC}")
 
     print ("------------------------------------")
     print (f"Bot Name: {bot.user.name}")
@@ -106,8 +115,8 @@ async def on_ready():
     ## useful docs for setting activities
     ## https://medium.com/python-in-plain-english/how-to-change-discord-bot-status-with-discord-py-39219c8fceea
     ## https://stackoverflow.com/questions/59126137/how-to-change-discord-py-bot-activity
-    
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Tawi"))
+    change_status.start()
+    automated_yiff.start()
     print(f"{bcolors.WARNING}activity set.{bcolors.ENDC}")
 
     guild = discord.utils.find(lambda g: g.name == GUILD, bot.guilds)
@@ -120,6 +129,41 @@ async def on_ready():
     print(f"{bcolors.PURPLE}Started in {round(time.time()-start,2)} seconds.{bcolors.ENDC}\n")
     print ("\nMessage Log:")
 
+@tasks.loop(seconds=10)
+async def change_status():
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=choice(status)))
+
+@tasks.loop(seconds=60)
+async def automated_yiff():
+    if bot.automation == False: return
+    channel = discord.utils.get(bot.get_all_channels(), guild__name=GUILD, name=f'automated-yiff')
+    if str(channel.id) not in WHITELIST: return
+    if channel.is_nsfw():
+        em = discord.Embed(
+            title=None,
+            description=None,
+            color=discord.Colour(0x000000)
+        )
+        try:
+            url = "https://www.sheri.bot/api/yiff"
+            headers = {'Authorization': 'Token '+SHERI_API_KEY}
+            r = requests.get(url, headers=headers, timeout=5)
+            print(r)
+            if r:
+                #print (r.json())
+                em.set_image(url=str(r.json()["url"]))
+                em.set_author(name=">> Link", url=str(r.json()["url"]))
+                await channel.send(embed=em)
+        except requests.exceptions.ReadTimeout:
+            await channel.send('`Connection to api timed out.`')
+            return
+        except requests.exceptions.ConnectionError:
+            await channel.send('`Connection error.`')
+            return
+    else:
+        await channel.send("`NSFW. You can't use that here.`")
+        return
+    
 
 ## Getting rid of default commands
 
@@ -144,8 +188,7 @@ async def help(ctx):
     em.add_field(name=BOT_PREFIX + "help", value="Shows this message\nalias: " + BOT_PREFIX + "h", inline=False)
     em.add_field(name=BOT_PREFIX + "images", value="Image help", inline=False)
     em.add_field(name=BOT_PREFIX + "ping", value="Sends a ping to the bot and returns an value in `ms`\nalias: " + BOT_PREFIX + "p", inline=False)
-    em.add_field(name=BOT_PREFIX + "shut", value="Tell Atari to shut up for 10 minutes. Status gets displayed.", inline=False)
-    em.add_field(name=BOT_PREFIX + "say", value="Say smth with the bot.\n`No mentions please.`", inline=False)
+    em.add_field(name=BOT_PREFIX + "say", value="Say smth with the bot.`", inline=False)
     em.add_field(name=BOT_PREFIX + "remindme", value="Reminds you of smth.\nalias: " + BOT_PREFIX + "rm", inline=False)
     em.add_field(name="'Hey Atari'", value="Followed by\n`- is [...] ugly` > is smth ugly on a scale from 0-100%.", inline=False)
     em.add_field(name="other stuff", value="Will respond to greetings, such as\n```md\n- Hewwo\n- Hey\n- Hi```\nI will respond if you\n```md\n- call me cute\n- ask me how I am```\n*and there are some things that get triggered randomly*\n\nYou can ask <@!349471395685859348> for help.", inline=False)
@@ -330,14 +373,31 @@ async def add(ctx):
             return
         else: return
 
-@bot.command()
-async def say(ctx, *args):
+@bot.command(pass_context=True)
+async def verifyme(ctx):
     if str(ctx.channel.id) not in WHITELIST: return
-    resp = str(args)
-    resp = resp.replace("'", '')
-    resp = resp.replace(",", '')
-    resp = resp.replace("(", '')
-    resp = resp.replace(")", '')
+    user = ctx.message.author
+    role = get(ctx.guild.roles, name="✓ rules")
+    mods = get(ctx.guild.roles, name="Management")
+    await user.add_roles(role)
+    await ctx.message.delete()
+    channel = discord.utils.get(bot.get_all_channels(), guild__name=GUILD, name=f'new-joins')
+    await channel.send(f"{ctx.author.name} just accepted le rules. Make sure to greet them <@&{mods.id}>!")
+    #DM Channel answer:
+    await ctx.author.send("You're now verified. Enjoy your stay!")
+
+@bot.command()
+async def nsfw(ctx):
+    if str(ctx.channel.id) not in WHITELIST: return
+    bot.automation = True
+    #DM Channel answer:
+    await ctx.author.send("NSFW on.")
+    
+
+@bot.command()
+async def say(ctx, *, arg):
+    if str(ctx.channel.id) not in WHITELIST: return
+    resp = str(arg)
     if 'ATARI' in resp.upper() and 'CUTE' in resp.upper():
         await ctx.send('Get rickrolled instead https://www.youtube.com/watch?v=DLzxrzFCyOs')
         return
@@ -349,6 +409,26 @@ async def say(ctx, *args):
         return
     await ctx.message.delete()
     await ctx.send(resp)
+
+@bot.command()
+async def magicmath(ctx, *, arg):
+    if str(ctx.channel.id) not in WHITELIST: return
+    resp = int(arg)
+    await ctx.send('Number: '+str(resp))
+    i = 1
+    while i < 4:
+        if (resp % 2) == 0:
+            await ctx.send(str(resp)+' is even.')
+            resp1=resp
+            resp=resp/2
+            await ctx.send(str(resp1)+'/2='+str(resp))
+        else:
+            await ctx.send(str(resp)+' is odd.')
+            resp1=resp
+            resp=resp*3+1
+            await ctx.send(str(resp1)+'*3+1='+str(resp))
+        i += 1
+    await ctx.send('Ending up with: '+str(resp))
 
 @bot.command(name="spam", description="uhhhhh yeah.")
 async def spam(ctx, member: discord.User = 'null'):
@@ -401,7 +481,7 @@ async def sheri_api_nsfw(ctx, api_url):
             r = requests.get(url, headers=headers, timeout=5)
             print(r)
             if r:
-                print (r.json())
+                #print (r.json())
                 em.set_image(url=str(r.json()["url"]))
                 em.set_author(name=">> Link", url=str(r.json()["url"]))
                 await ctx.send(embed=em)
@@ -426,8 +506,9 @@ async def sheri_api_sfw(ctx, api_url):
         url = api_url
         headers = {'Authorization': 'Token '+SHERI_API_KEY}
         r = requests.get(url, headers=headers, timeout=5)
+        print(r)
         if r:
-            print (r.json())
+            #print (r.json())
             em.set_image(url=str(r.json()["url"]))
             em.set_author(name=">> Link", url=str(r.json()["url"]))
             await ctx.send(embed=em)
@@ -1002,11 +1083,19 @@ async def remindme(ctx, *reminder):
 bot.shut = False
 @bot.listen('on_message')
 async def message(message):
+    # current date and time
+    now = datetime.now()
+    timestamp = round(datetime.timestamp(now))
     # we do not want the bot to reply to itself
     if message.author == bot.user:
-        print(f"{bcolors.CYAN3}{message.author} in {message.channel.name} on {message.guild.name}:\n {message.content}{bcolors.ENDC}")
-        return
+        if str(message.channel.id) not in WHITELIST: return
+        if str(message.guild.id) != GUILD_ID: return
+        if message.attachments != None and message.content == '':
+            print(f"{bcolors.CYAN3}{datetime.fromtimestamp(timestamp)} - {message.author} in {message.channel.name} on {message.guild.name}:\n [image]{bcolors.ENDC}")
+        if message.content != '':
+            print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {message.content}{bcolors.ENDC}")
     if message.author.bot: return
+    if message.author.id == 355330245433360384: return
 
     """
     preventing Atari from responding in channels
@@ -1016,7 +1105,10 @@ async def message(message):
 
     content = message.content
     rnd = random.randrange(0, 100)
-    print(f"{bcolors.CYAN}{message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {content} // {bcolors.PURPLE}rnd = {rnd}{bcolors.ENDC}")
+    if message.attachments != None and content == '':
+        print(f"{bcolors.CYAN3}{datetime.fromtimestamp(timestamp)} - {message.author} in {message.channel.name} on {message.guild.name}:\n {message.attachments}{bcolors.ENDC}")
+    if content != '':
+        print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {content} // {bcolors.PURPLE}rnd = {rnd}{bcolors.ENDC}")
     
 
     if 'SHUT' in content.upper() and rnd < 50:
@@ -1033,7 +1125,12 @@ async def message(message):
             bot.shut=False
             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Tawi"))
             print('Bot is unmuted.')
-    elif 'SHUT' in content.upper() and rnd > 49:
+        if content.upper().startswith('?UNSHUT'):
+            await message.channel.send("<3".format(message))
+            bot.shut=False
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Tawi"))
+            print('Bot is unmuted.')
+    elif content.upper().startswith('SHUT') and rnd > 49:
         await message.channel.send("Shut, {0.author.name} *lmao*.".format(message))
         return            
     
@@ -1161,10 +1258,12 @@ async def message(message):
             return
         
     
-    if content.upper().startswith("NO U"):
+    if content.upper().startswith("NO U") or content.upper().startswith("NO YOU") and rnd > 69:
+        await message.channel.send('https://i.etsystatic.com/23988690/r/il/a59855/2478171220/il_570xN.2478171220_llv4.jpg')
+    
+    if content.upper().startswith("NO U") or content.upper().startswith("NO YOU"):
         await message.channel.send('no u')
         
-
     if content.upper().startswith("AAAAA"):
         await message.channel.send('*aaaaaaaaaa*')
 
@@ -1223,6 +1322,21 @@ async def message(message):
         await message.channel.send("I'm doing goood, {0.author.name}. <3".format(message))
         return
 
+    if content.upper().startswith("IS <@!797844828834365461>") and rnd < 90 or content.upper().startswith("IS ATARI") and rnd < 90:
+        await message.reply("***no***")
+        return
+
+    if content.upper().startswith("IS <@!797844828834365461>") and rnd > 89 or content.upper().startswith("IS ATARI") and rnd > 89:
+        await message.reply("***||~~yes~~||***")
+        return
+
+    if 'IS' in content.upper() and 'UGLY' in content.upper():
+                await message.reply(f"{rnd}%".format(message))
+                return
+    if 'IS' in content.upper() and 'CUTE' in content.upper():
+        await message.reply(f"{rnd}%".format(message))
+        return
+
     if 'ATARI' in content.upper() and not BOT_PREFIX+'SAY' in content.upper():
         if 'ATARI' in content.upper() and 'NOT NOT' in content.upper():
                 await message.channel.send("**not not**".format(message))
@@ -1257,15 +1371,17 @@ async def message(message):
                 await message.channel.send("But...".format(msg))
                 await message.channel.send("But you are.".format(msg))
                 return
+            if 'HRU' in msg.content.upper() or 'HOW ARE YOU' in msg.content.upper():
+                await message.channel.send("I'm finee, {0.author.name}.".format(msg))
+            if 'IS' in msg.content.upper() and 'UGLY' in msg.content.upper():
+                await msg.reply(f"{rnd}%".format(msg))
+                return
+            if 'IS' in msg.content.upper() and 'CUTE' in msg.content.upper():
+                await msg.reply(f"{rnd}%".format(msg))
+                return
             if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() or 'CUTIE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and not "NOT" in msg.content.upper() and not "IS" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "IS" in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "IS" in msg.content.upper():
                 await message.channel.send("You're cute aswell, {0.author.name}.".format(msg))
                 return
-            if 'HRU' in msg.content.upper() or 'HOW ARE YOU' in msg.content.upper():
-                await message.channel.send("I'm finee, {0.author.name}.".format(msg))
-            if 'UGLY' in msg.content.upper():
-                await msg.reply(f"{rnd}%".format(msg))
-            if 'IS' in msg.content.upper() and 'CUTE' in msg.content.upper():
-                await msg.reply(f"{rnd}%".format(msg))
 
 
 ## run that stuff
