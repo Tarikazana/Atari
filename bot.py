@@ -5,6 +5,7 @@
 ##                                                          ##
 ##############################################################
 import asyncio
+import sys
 import os
 import random
 import re
@@ -53,15 +54,11 @@ print(f"{bcolors.CYAN}loading dotenv content...{bcolors.ENDC}")
 
 load_dotenv()   #loads stuff from .env
 TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD = os.getenv('DISCORD_GUILD')
-GUILD_ID = os.getenv('GUILD_ID')
 BOT_VERSION = os.getenv('BOT_VERSION')
 BOT_PREFIX = os.getenv('PREFIX')
 WHITELIST = os.getenv('SERVER_WHITELIST')
 SHERI_API_KEY = os.getenv('SHERI_API_KEY')
 FURRYV2_API_KEY = os.getenv('FURRYV2_API_KEY')
-E621_API_KEY = os.getenv('E621_API_KEY')
-E621_USER = os.getenv('E621_USER')
 
 DEFAULT_EMBED_COLOR = discord.Colour(0xfc03ad)
 print('done.')
@@ -105,7 +102,7 @@ async def on_ready():
     print ("------------------------------------")
     print (f"Bot Name: {bot.user.name}")
     print (f"Bot ID: {bot.user.id}")
-    print (f"Bot Created: {bot.user.created_at}")
+    print (f"Bot Created: {datetime.fromtimestamp(round(datetime.timestamp(bot.user.created_at)))}")
     print (f"Discord Version: {discord.__version__}")
     print (f"Bot Version: {BOT_VERSION}")
     print ("------------------------------------")
@@ -119,12 +116,14 @@ async def on_ready():
     automated_yiff.start()
     print(f"{bcolors.WARNING}activity set.{bcolors.ENDC}")
 
-    guild = discord.utils.find(lambda g: g.name == GUILD, bot.guilds)
     print(
-        f'{bot.user} is connected to the following guilds:\n'
-        f'{guild.name}(id: {guild.id})'
+        f'{bot.user} is connected to {len(bot.guilds)} guilds\n'
     )
-    print(f'Guild Members:{guild.member_count}')
+    for x in bot.guilds:
+        print ("-")
+        print(f'{x.name}(id: {x.id})')
+        print(f'Guild Members:{x.member_count}')
+        
     print ("------------------------------------")
     print(f"{bcolors.PURPLE}Started in {round(time.time()-start,2)} seconds.{bcolors.ENDC}\n")
     print ("\nMessage Log:")
@@ -133,36 +132,46 @@ async def on_ready():
 async def change_status():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=choice(status)))
 
-@tasks.loop(seconds=60)
+@tasks.loop(seconds=300)
 async def automated_yiff():
     if bot.automation == False: return
-    channel = discord.utils.get(bot.get_all_channels(), guild__name=GUILD, name=f'automated-yiff')
-    if str(channel.id) not in WHITELIST: return
-    if channel.is_nsfw():
-        em = discord.Embed(
-            title=None,
-            description=None,
-            color=discord.Colour(0x000000)
-        )
-        try:
-            url = "https://www.sheri.bot/api/yiff"
-            headers = {'Authorization': 'Token '+SHERI_API_KEY}
-            r = requests.get(url, headers=headers, timeout=5)
-            print(r)
-            if r:
-                #print (r.json())
-                em.set_image(url=str(r.json()["url"]))
-                em.set_author(name=">> Link", url=str(r.json()["url"]))
-                await channel.send(embed=em)
-        except requests.exceptions.ReadTimeout:
-            await channel.send('`Connection to api timed out.`')
-            return
-        except requests.exceptions.ConnectionError:
-            await channel.send('`Connection error.`')
-            return
-    else:
-        await channel.send("`NSFW. You can't use that here.`")
-        return
+    text_channel_list = []
+    for guild in bot.guilds:
+        for channel in guild.text_channels:
+            text_channel_list.append(channel)
+    channel_list_len = len(text_channel_list)
+    i = 0
+    while i < channel_list_len:
+        if 'automated-yiff' in str(text_channel_list[i]):
+            channel = channel = bot.get_channel(text_channel_list[i].id)
+            if str(channel.id) not in WHITELIST: return
+            if channel.is_nsfw():
+                em = discord.Embed(
+                    title=None,
+                    description=None,
+                    color=discord.Colour(0x000000)
+                )
+                try:
+                    url = "https://www.sheri.bot/api/yiff"
+                    headers = {'Authorization': 'Token '+SHERI_API_KEY}
+                    r = requests.get(url, headers=headers, timeout=5)
+                    print(r)
+                    if r:
+                        #print (r.json())
+                        em.set_image(url=str(r.json()["url"]))
+                        em.set_author(name=">> Link", url=str(r.json()["url"]))
+                        await channel.send(embed=em)
+                except requests.exceptions.ReadTimeout:
+                    await channel.send('`Connection to api timed out.`')
+                    return
+                except requests.exceptions.ConnectionError:
+                    await channel.send('`Connection error.`')
+                    return
+            else:
+                await channel.send("`NSFW. You can't use that here.`")
+                return
+        i=i+1
+    return
     
 
 ## Getting rid of default commands
@@ -190,9 +199,10 @@ async def help(ctx):
     em.add_field(name=BOT_PREFIX + "ping", value="Sends a ping to the bot and returns an value in `ms`\nalias: " + BOT_PREFIX + "p", inline=False)
     em.add_field(name=BOT_PREFIX + "say", value="Say smth with the bot.`", inline=False)
     em.add_field(name=BOT_PREFIX + "remindme", value="Reminds you of smth.\nalias: " + BOT_PREFIX + "rm", inline=False)
-    em.add_field(name="'Hey Atari'", value="Followed by\n`- is [...] ugly` > is smth ugly on a scale from 0-100%.", inline=False)
+    em.add_field(name="'Hey Atari'", value="Followed by\n`- is [...] ugly/cute` > is smth ugly/cute on a scale from 0-100%.", inline=False)
     em.add_field(name="other stuff", value="Will respond to greetings, such as\n```md\n- Hewwo\n- Hey\n- Hi```\nI will respond if you\n```md\n- call me cute\n- ask me how I am```\n*and there are some things that get triggered randomly*\n\nYou can ask <@!349471395685859348> for help.", inline=False)
- 
+    em.add_field(name=BOT_PREFIX + "avatar", value="Avatar of user", inline=False)
+
     await ctx.message.delete()
     await ctx.send(embed=em)
 
@@ -347,15 +357,15 @@ async def whitelist(ctx):
 async def add(ctx):
     guildid=str(ctx.message.guild.id)
     authorid=str(ctx.message.author.id)
-    if guildid == GUILD_ID and authorid == '349471395685859348':
-        with open(".env", "r") as read_obj:
+    if authorid == '349471395685859348':
+        with open("atari/.env", "r") as read_obj:
             # Read all lines in the file one by one
             for line in read_obj:
                 # For each line, check if line contains the string
                 if str(ctx.channel.id) in line:
                     await ctx.send('Channel already added.')
                     return
-        f = open(".env", "a")
+        f = open("atari/.env", "a")
         f.write(f", {ctx.channel.id}")
         f.close()
         em = discord.Embed(
@@ -368,10 +378,8 @@ async def add(ctx):
         await ctx.message.delete()
         await ctx.send(embed=em)
     else:
-        if guildid == GUILD_ID:
-            await ctx.send('Only <@!349471395685859348> can use this.')
-            return
-        else: return
+        await ctx.send('Only <@!349471395685859348> can use this.')
+        return
 
 @bot.command(pass_context=True)
 async def verifyme(ctx):
@@ -381,10 +389,28 @@ async def verifyme(ctx):
     mods = get(ctx.guild.roles, name="Management")
     await user.add_roles(role)
     await ctx.message.delete()
-    channel = discord.utils.get(bot.get_all_channels(), guild__name=GUILD, name=f'new-joins')
-    await channel.send(f"{ctx.author.name} just accepted le rules. Make sure to greet them <@&{mods.id}>!")
-    #DM Channel answer:
-    await ctx.author.send("You're now verified. Enjoy your stay!")
+
+    text_channel_list = []
+    for guild in bot.guilds:
+        for channel in guild.text_channels:
+            text_channel_list.append(channel)
+    channel_list_len = len(text_channel_list)
+    i = 0
+    while i < channel_list_len:
+        if 'new-joins' in str(text_channel_list[i]):
+            channel = bot.get_channel(text_channel_list[i].id)
+            if str(channel.id) in WHITELIST:
+                if channel.guild.id == ctx.guild.id:
+                    em = discord.Embed(
+                        title=None,
+                        description=(f"{ctx.author.name} just accepted le rules. Make sure to greet them <@&{mods.id}>!"),
+                        color=discord.Colour(0x000000)
+                    )  
+                    await channel.send(embed=em)
+                    #DM Channel answer:
+                    await ctx.author.send("You're now verified. Enjoy your stay!")
+        i=i+1
+    return
 
 @bot.command()
 async def nsfw(ctx):
@@ -392,6 +418,27 @@ async def nsfw(ctx):
     bot.automation = True
     #DM Channel answer:
     await ctx.author.send("NSFW on.")
+
+@bot.command()
+async def avatar(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+    if member == ctx.message.author or member == 'null':
+        em = discord.Embed(
+        title=None,
+        description=f"Avatar of {ctx.message.author.name}",
+        color=DEFAULT_EMBED_COLOR
+        )
+        url = str(ctx.message.author.avatar_url).replace(".webp",".png")
+        em.set_image(url=f"{url}")
+    else:
+        em = discord.Embed(
+        title=None,
+        description=f"Avatar of {member.name}",
+        color=DEFAULT_EMBED_COLOR
+        )
+        url = str(member.avatar_url).replace(".webp",".png")
+        em.set_image(url=f"{url}")
+    await ctx.send(embed=em)
     
 
 @bot.command()
@@ -768,11 +815,10 @@ async def maws(ctx):
     await sheri_api_nsfw(api_url="https://www.sheri.bot/api/maws", ctx=ctx)
 
 @bot.command()
-async def pat(ctx):
-    await sheri_api_sfw(api_url="https://www.sheri.bot/api/pat", ctx=ctx)
-
-@bot.command()
 async def paws(ctx):
+    if ctx.guild.id == 803486660296704000:
+        await ctx.send("`NSFW. You can't use that here.`")
+        return
     await sheri_api_sfw(api_url="https://www.sheri.bot/api/paws", ctx=ctx)
 
 @bot.command()
@@ -804,6 +850,53 @@ async def deer(ctx):
 @bot.command()
 async def fox(ctx):
     await sheri_api_sfw(api_url="https://www.sheri.bot/api/fox", ctx=ctx)
+
+@bot.command()
+async def dragone(ctx):
+    if str(ctx.channel.id) not in WHITELIST: return
+    em = discord.Embed(
+        title=None,
+        description="cute dragon uwu",
+        color=discord.Colour(0x000000)
+    )
+    em.set_image(url="https://cdn.discordapp.com/avatars/601923218114084904/9d120a2bf7edb61c1c6d1f64b3945bee.png?size=128")
+    await ctx.send(embed=em)
+
+@bot.command()
+async def dragon(ctx):
+    if str(ctx.channel.id) not in WHITELIST: return
+    dragon = ["https://cdn.discordapp.com/attachments/804009510050070629/807039974637174834/images_7.jpeg",
+    "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2b9048eb-6b49-4cff-9800-11f338a3623e/daopew1-7b9fe91a-6947-4ffc-b6ed-b8b84b05eac2.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOiIsImlzcyI6InVybjphcHA6Iiwib2JqIjpbW3sicGF0aCI6IlwvZlwvMmI5MDQ4ZWItNmI0OS00Y2ZmLTk4MDAtMTFmMzM4YTM2MjNlXC9kYW9wZXcxLTdiOWZlOTFhLTY5NDctNGZmYy1iNmVkLWI4Yjg0YjA1ZWFjMi5wbmcifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6ZmlsZS5kb3dubG9hZCJdfQ.TzLS_XmEgxdfeLcF_UrU9rY7ZTeWkiYMg5KoDYPNnhg",
+    "https://cdn.discordapp.com/attachments/804009510050070629/807041214204739614/45c.jpeg",
+    "https://cdn.discordapp.com/attachments/804009510050070629/807041226809278474/7d3118369b57cca2d6581e10ea6cc13d.jpg",
+    "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9de92e75-ddc7-4869-859e-2f6e4cca04b0/de38qyc-92307e83-edd6-4666-95df-56e8d4473a3b.png/v1/fill/w_1280,h_1280,q_80,strp/fluffy_dragon_by_ledommk_de38qyc-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOiIsImlzcyI6InVybjphcHA6Iiwib2JqIjpbW3siaGVpZ2h0IjoiPD0xMjgwIiwicGF0aCI6IlwvZlwvOWRlOTJlNzUtZGRjNy00ODY5LTg1OWUtMmY2ZTRjY2EwNGIwXC9kZTM4cXljLTkyMzA3ZTgzLWVkZDYtNDY2Ni05NWRmLTU2ZThkNDQ3M2EzYi5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.NcILF0RvIgb0ixa8K5nNVaCkP_f10EeVFlD602na7MY",
+    "https://www.pngkey.com/png/full/557-5571823_lythalia-angel-dragon-furry-cat-art.png",
+    "https://pbs.twimg.com/media/D8TH6h5UwAE8ixK.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807042581228814366/6284e072b66d0ed6415744549113068e.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807042581380726814/0e55d20db9a4d1a084b29e3eb1776cd0.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807042581607088148/de9k2rx-b29089a4-63c3-4562-99e7-2f27ee17d67b.jpg",
+    "https://i.redd.it/h86yqqkx79h51.png",
+    "https://cutewallpaper.org/21/furry-wallpaper-phone/furry,-Dragon-Wallpapers-HD-Desktop-and-Mobile-Backgrounds.jpg",
+    "https://fsa.zobj.net/crop.php?r=pOyYVYryGAYVkAG0lbQbSKf62uPodFNQqfFiQY7JZ-1yPEjEdT0ISUtoPhz5P2j9T9uThJ7pv9eXkdE3wbFgGW3sWGdbjMih3HZFdcTt1vE1IM9qpJ3fq8stJFvrBfjAFR2UKone6CHE-3rl",
+    "https://c4.wallpaperflare.com/wallpaper/369/546/513/anthro-dragon-furry-waterfall-wallpaper-preview.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045109543075880/ZymSpellbook.png",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045074021122048/The-Dragon-Prince.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045073732108299/The-Dragon-Prince-Season-4-1.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045073388044288/Netflixs-The-Dragon-Prince-1280x720.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045073158144000/images_8.jpeg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045072809099274/film__19362-how-to-train-your-dragon-the-hidden-world--hi_res-b49e2fdd.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045072507371540/MV5BN2FiZDUxZTMtMzUxMi00NzYxLTg0NzEtNzViYTY4N2Y2MWFjXkEyXkFqcGdeQW1yb3NzZXI._V1_CR780484272_AL_UY268.jpg",
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045109887533056/962ceafa183985d4680cf662782bac93.jpg"
+    ]
+    currentpicture=choice(dragon)
+    em = discord.Embed(
+        title=None,
+        description="So many cute dragons uwu",
+        color=discord.Colour(0x000000)
+    )
+    em.set_image(url=str(currentpicture))
+    em.set_author(name=">> Link", url=str(currentpicture))
+    await ctx.send(embed=em)
 
 @bot.command()
 async def husky(ctx):
@@ -859,7 +952,7 @@ async def boop(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Boops {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} boops {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} boops {member.name}*")
     await sheri_api_sfw(api_url="https://www.sheri.bot/api/boop", ctx=ctx)
 
 @bot.command()
@@ -869,8 +962,31 @@ async def nboop(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Boops {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} boops {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} boops {member.name}*")
     await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nboop", ctx=ctx)
+
+@bot.command()
+async def pat(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+
+    if member == ctx.message.author or member == 'null':
+        await sheri_api_sfw(api_url="https://www.sheri.bot/api/pat", ctx=ctx)
+    else:
+        em = discord.Embed(
+        title=None,
+        description=(f"*{ctx.message.author.name} pats {member.name}*"),
+        color=DEFAULT_EMBED_COLOR
+        )
+        file = discord.File("atari/ychpatpat.png", filename="ychpatpat.png")
+        em.set_image(url="attachment://ychpatpat.png")
+        await ctx.send(file=file, embed=em)
+    
+@bot.command()
+async def restart(ctx):
+    await ctx.send("restarting...")
+    await asyncio.sleep(3)
+    sys.exit(f"{ctx.message.author.name} requested a restart.")
+
 
 @bot.command()
 async def hug(ctx, member: discord.User = 'null'):
@@ -879,7 +995,7 @@ async def hug(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Hugs {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} hugs {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} hugs {member.name}*")
     await sheri_api_sfw(api_url="https://www.sheri.bot/api/hug", ctx=ctx)
 
 @bot.command()
@@ -889,7 +1005,7 @@ async def nhug(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Hugs {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} hugs {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} hugs {member.name}*")
     await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nhug", ctx=ctx)
 
 @bot.command()
@@ -899,7 +1015,7 @@ async def kiss(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Kisses {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} kisses {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} kisses {member.name}*")
     await sheri_api_sfw(api_url="https://www.sheri.bot/api/kiss", ctx=ctx)
 
 @bot.command()
@@ -909,7 +1025,7 @@ async def nkiss(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Kisses {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} kisses {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} kisses {member.name}*")
     await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nkiss", ctx=ctx)
 
 @bot.command()
@@ -919,7 +1035,7 @@ async def lick(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Licks {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} licks {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} licks {member.name}*")
     await sheri_api_sfw(api_url="https://www.sheri.bot/api/lick", ctx=ctx)
 
 @bot.command()
@@ -929,7 +1045,7 @@ async def nlick(ctx, member: discord.User = 'null'):
     if member == ctx.message.author or member == 'null':
         await ctx.send(f"*Licks {ctx.message.author.name}*")
     else:
-        await ctx.send(f"*{ctx.message.author.name} licks {member.mention}*")
+        await ctx.send(f"*{ctx.message.author.name} licks {member.name}*")
     await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nlick", ctx=ctx)
 
 @bot.command()
@@ -1089,11 +1205,10 @@ async def message(message):
     # we do not want the bot to reply to itself
     if message.author == bot.user:
         if str(message.channel.id) not in WHITELIST: return
-        if str(message.guild.id) != GUILD_ID: return
         if message.attachments != None and message.content == '':
-            print(f"{bcolors.CYAN3}{datetime.fromtimestamp(timestamp)} - {message.author} in {message.channel.name} on {message.guild.name}:\n [image]{bcolors.ENDC}")
+            print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {bcolors.ENDC}{bcolors.PURPLE}{message.author} in {message.channel.name} on {message.guild.name}:\n [image]{bcolors.ENDC}")
         if message.content != '':
-            print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {message.content}{bcolors.ENDC}")
+            print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {bcolors.ENDC}{bcolors.PURPLE}{message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {message.content}{bcolors.ENDC}")
     if message.author.bot: return
     if message.author.id == 355330245433360384: return
 
@@ -1106,10 +1221,13 @@ async def message(message):
     content = message.content
     rnd = random.randrange(0, 100)
     if message.attachments != None and content == '':
-        print(f"{bcolors.CYAN3}{datetime.fromtimestamp(timestamp)} - {message.author} in {message.channel.name} on {message.guild.name}:\n {message.attachments}{bcolors.ENDC}")
+        print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {message.author} in {message.channel.name} on {message.guild.name}:\n {message.attachments}{bcolors.ENDC}")
     if content != '':
         print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {content} // {bcolors.PURPLE}rnd = {rnd}{bcolors.ENDC}")
-    
+
+    if content.upper().startswith('!D BUMP'):
+        await asyncio.sleep(7200)
+        await message.channel.send('Server can be bumped again.')
 
     if 'SHUT' in content.upper() and rnd < 50:
         if 'SHUT' in content.upper() and 'ATARI' in content.upper():
@@ -1258,7 +1376,7 @@ async def message(message):
             return
         
     
-    if content.upper().startswith("NO U") or content.upper().startswith("NO YOU") and rnd > 69:
+    if content.upper().startswith("NO U") and rnd > 69 or content.upper().startswith("NO YOU") and rnd > 69:
         await message.channel.send('https://i.etsystatic.com/23988690/r/il/a59855/2478171220/il_570xN.2478171220_llv4.jpg')
     
     if content.upper().startswith("NO U") or content.upper().startswith("NO YOU"):
