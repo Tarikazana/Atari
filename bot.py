@@ -88,12 +88,13 @@ intents.messages = True
 
 session = None
 
-status = ["Tawi", "_help"]
+status = ["Tawi", "_help", "_music"]
 
 bot.automation = False
 
 @bot.event
 async def on_ready():
+    bot.load_extension('cogs.music')
     # current date and time
     now = datetime.now()
     timestamp = round(datetime.timestamp(now))
@@ -195,13 +196,15 @@ async def help(ctx):
     em.set_thumbnail(url=bot.user.avatar_url)
     em.set_image(url=bot.user.avatar_url)
     em.add_field(name=BOT_PREFIX + "help", value="Shows this message\nalias: " + BOT_PREFIX + "h", inline=False)
-    em.add_field(name=BOT_PREFIX + "images", value="Image help", inline=False)
+    em.add_field(name=BOT_PREFIX + "music", value="Music help", inline=False)
     em.add_field(name=BOT_PREFIX + "ping", value="Sends a ping to the bot and returns an value in `ms`\nalias: " + BOT_PREFIX + "p", inline=False)
-    em.add_field(name=BOT_PREFIX + "say", value="Say smth with the bot.`", inline=False)
-    em.add_field(name=BOT_PREFIX + "remindme", value="Reminds you of smth.\nalias: " + BOT_PREFIX + "rm", inline=False)
-    em.add_field(name="'Hey Atari'", value="Followed by\n`- is [...] ugly/cute` > is smth ugly/cute on a scale from 0-100%.", inline=False)
-    em.add_field(name="other stuff", value="Will respond to greetings, such as\n```md\n- Hewwo\n- Hey\n- Hi```\nI will respond if you\n```md\n- call me cute\n- ask me how I am```\n*and there are some things that get triggered randomly*\n\nYou can ask <@!349471395685859348> for help.", inline=False)
+    em.add_field(name=BOT_PREFIX + "say", value="Say smth with the bot.", inline=False)
     em.add_field(name=BOT_PREFIX + "avatar", value="Avatar of user", inline=False)
+    em.add_field(name=BOT_PREFIX + "remindme", value="Reminds you of smth.\nalias: " + BOT_PREFIX + "rm", inline=False)
+    em.add_field(name=BOT_PREFIX + "iscute", value="is smth cute on a scale from 0-100%", inline=False)
+    em.add_field(name=BOT_PREFIX + "isugleh", value="is smth ugleh on a scale from 0-100%", inline=False)
+    em.add_field(name="other stuff", value="Will respond to greetings, such as\n```md\n- Hewwo\n- Hey\n- Hi```\nI will respond if you\n```md\n- call me cute\n- ask me how I am```\n*and there are some things that get triggered randomly*\n\nYou can ask <@!349471395685859348> for help.", inline=False)
+    
 
     await ctx.message.delete()
     await ctx.send(embed=em)
@@ -308,6 +311,29 @@ async def images(ctx):
     , inline=True)
 
     em.set_footer(text="Requested by " + ctx.message.author.name + "")
+    await ctx.message.delete()
+    await ctx.send(embed=em)
+
+@bot.command(name="music", description="Music help")
+async def music(ctx):
+    if str(ctx.channel.id) not in WHITELIST: return
+    em = discord.Embed(
+        title="- Music -",
+        description=None,
+        color=DEFAULT_EMBED_COLOR
+    )
+    em.add_field(name="**Commands**", value=BOT_PREFIX + "join\n" 
+    + BOT_PREFIX + "play\n"
+    + BOT_PREFIX + "stop\n"
+    + BOT_PREFIX + "skip\n"
+    + BOT_PREFIX + "dc\n"
+    + BOT_PREFIX + "current\n"
+    + BOT_PREFIX + "nowplaying\n"
+    + BOT_PREFIX + "queue\n"
+    , inline=True)
+
+    em.set_footer(text="Requested by " + ctx.message.author.name + "")
+    await ctx.message.delete()
     await ctx.send(embed=em)
 
 @bot.command(name="ping", description="Sends a ping to the bot and returns an value in `ms`", aliases=['p'])
@@ -977,7 +1003,7 @@ async def pat(ctx, member: discord.User = 'null'):
         description=(f"*{ctx.message.author.name} pats {member.name}*"),
         color=DEFAULT_EMBED_COLOR
         )
-        file = discord.File("atari/ychpatpat.png", filename="ychpatpat.png")
+        file = discord.File("atari/data/ychpatpat.png", filename="ychpatpat.png")
         em.set_image(url="attachment://ychpatpat.png")
         await ctx.send(file=file, embed=em)
     
@@ -1047,6 +1073,30 @@ async def nlick(ctx, member: discord.User = 'null'):
     else:
         await ctx.send(f"*{ctx.message.author.name} licks {member.name}*")
     await sheri_api_nsfw(api_url="https://www.sheri.bot/api/nlick", ctx=ctx)
+
+@bot.command()
+async def iscute(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+    rnd = random.randrange(0, 100)
+    if member == ctx.message.author or member == 'null':
+        await ctx.reply(f"{rnd}%".format(message))
+        return
+    else:
+        await ctx.reply(f"{member.name} is {rnd}% cute")
+        print(ctx.message.author)
+        print(member)
+        return
+
+@bot.command()
+async def isugleh(ctx, member: discord.User = 'null'):
+    if str(ctx.channel.id) not in WHITELIST: return
+    rnd = random.randrange(0, 100)
+    if member == ctx.message.author or member == 'null':
+        await ctx.reply(f"{rnd}%".format(message))
+        return
+    else:
+        await ctx.reply(f"{member.name} is {rnd}% ugleh")
+        return
 
 @bot.command()
 async def fursuit(ctx):
@@ -1349,10 +1399,12 @@ async def message(message):
 
     if 'CUTE' in content.upper() and message.author.id == 683813339369177148 and rnd > 49:
         await message.channel.send('*Alpha is cute*')
+        return
         
 
     if 'CUTE' in content.upper() and message.author.id == 289802289638539274 and rnd > 49:
         await message.channel.send('*Lynix is so cute uwu*')
+        return
 
     if 'VORE' in content.upper() and not BOT_PREFIX+'VORE' in content.upper():
         if rnd > 90:
@@ -1448,13 +1500,6 @@ async def message(message):
         await message.reply("***||~~yes~~||***")
         return
 
-    if 'IS' in content.upper() and 'UGLY' in content.upper():
-                await message.reply(f"{rnd}%".format(message))
-                return
-    if 'IS' in content.upper() and 'CUTE' in content.upper():
-        await message.reply(f"{rnd}%".format(message))
-        return
-
     if 'ATARI' in content.upper() and not BOT_PREFIX+'SAY' in content.upper():
         if 'ATARI' in content.upper() and 'NOT NOT' in content.upper():
                 await message.channel.send("**not not**".format(message))
@@ -1491,12 +1536,6 @@ async def message(message):
                 return
             if 'HRU' in msg.content.upper() or 'HOW ARE YOU' in msg.content.upper():
                 await message.channel.send("I'm finee, {0.author.name}.".format(msg))
-            if 'IS' in msg.content.upper() and 'UGLY' in msg.content.upper():
-                await msg.reply(f"{rnd}%".format(msg))
-                return
-            if 'IS' in msg.content.upper() and 'CUTE' in msg.content.upper():
-                await msg.reply(f"{rnd}%".format(msg))
-                return
             if msg.content.upper().startswith("YOU AREN'T CUTEN'T") or 'CUTE' in msg.content.upper() or 'CUTIE' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "CUTEN'T" in msg.content.upper() and not "NOT" in msg.content.upper() and not "IS" in msg.content.upper() or 'CUTE' in msg.content.upper() and "AREN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "IS" in msg.content.upper() or "CUTEN'T" in msg.content.upper() and 'NOT' in msg.content.upper() and not "AREN'T" in msg.content.upper() and not "IS" in msg.content.upper():
                 await message.channel.send("You're cute aswell, {0.author.name}.".format(msg))
                 return
