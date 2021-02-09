@@ -1,8 +1,11 @@
 import discord
+import re
 from discord.ext import commands
 import lavalink
 from discord import utils
 from discord import Embed
+
+url_rx = re.compile(r'https?://(?:www\.)?.+')
 
 DEFAULT_EMBED_COLOR = discord.Colour(0xfc03ad)
 
@@ -31,7 +34,11 @@ class MusicCog(commands.Cog):
   async def play(self, ctx, *, query):
     try:
       player = self.bot.music.player_manager.get(ctx.guild.id)
-      query = f'ytsearch:{query}'
+      if url_rx.match(query):
+        isurl = True
+      else:
+        isurl = False
+        query = f'ytsearch:{query}'
       results = await player.node.get_tracks(query)
       tracks = results['tracks'][0:10]
       i = 0
@@ -41,20 +48,43 @@ class MusicCog(commands.Cog):
         query_result = query_result + f'{i}) {track["info"]["title"]} - {track["info"]["uri"]}\n'
       embed = Embed()
       embed.description = query_result
-
-      await ctx.channel.send(embed=embed)
-
-      def check(m):
-        return m.author.id == ctx.author.id
       
-      response = await self.bot.wait_for('message', check=check)
-      track = tracks[int(response.content)-1]
+      if isurl == False:
+        await ctx.channel.send(embed=embed)
+
+        def check(m):
+          return m.author.id == ctx.author.id
+        
+        response = await self.bot.wait_for('message', check=check)
+        try:
+          response_int = type(int(response.content))
+        except:
+          response_int = type(response.content)
+        
+        print(response_int)
+        if response_int != int:
+          await ctx.channel.send(f"`// That ain't lookin like a numba Chief. //`")
+          while response_int != int:
+            response = await self.bot.wait_for('message', check=check)
+            try:
+              response_int = type(int(response.content))
+            except:
+              response_int = type(response.content)
+              await ctx.channel.send(f"`// Still no numba Chief. //`")
+            print(response_int)
+          await ctx.channel.send(f"`// There ya go. //`")
+          track = tracks[int(response.content)-1]
+        else:
+          track = tracks[int(response.content)-1]
+      else:
+        track = tracks[0]
 
       player.add(requester=ctx.author.id, track=track)
       commands.position.append('x')
       if not player.is_playing:
         await ctx.channel.send(f"`Added: {track.get('info').get('title')} // position: {len(player.queue)}`")
         await ctx.channel.send(f"`// Now playing: {track.get('info').get('title')} //`")
+        await player.stop()
         await player.play()
         return
       await ctx.channel.send(f"`Added: {track.get('info').get('title')} // position: {len(player.queue)+1}`")
@@ -79,9 +109,15 @@ class MusicCog(commands.Cog):
   async def current(self,ctx):
     player = self.bot.music.player_manager.get(ctx.guild.id)
     if len(player.queue) == 1:
-      embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Song queued.",url=f"https://youtube.com/watch?v={player.current.identifier}")
+      if 'www.twitch.tv/' in player.current.identifier:
+        embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Song queued.",url=f"{player.current.identifier}")
+      else:
+        embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Song queued.",url=f"https://youtube.com/watch?v={player.current.identifier}")
     else:
-      embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Songs queued.",url=f"https://youtube.com/watch?v={player.current.identifier}")
+      if 'www.twitch.tv/' in player.current.identifier:
+        embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Songs queued.",url=f"{player.current.identifier}")
+      else:
+        embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Songs queued.",url=f"https://youtube.com/watch?v={player.current.identifier}")
     await ctx.send(embed=embed)
 
   @commands.command(name="queue",description="Shows queue.",usage="current",aliases=['q'])
@@ -125,7 +161,7 @@ class MusicCog(commands.Cog):
       player = self.bot.music.player_manager.get(ctx.guild.id)
 
       if player.is_playing:
-        await player.stop()
+        await player.play()
         await ctx.channel.send(f"`// Skipped. //`")
         if len(player.queue) == 0:
           await ctx.channel.send(f"`// No Tracks in queue. //`")
