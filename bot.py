@@ -144,7 +144,7 @@ async def automated_yiff():
     i = 0
     while i < channel_list_len:
         if 'automated-yiff' in str(text_channel_list[i]):
-            channel = channel = bot.get_channel(text_channel_list[i].id)
+            channel = bot.get_channel(text_channel_list[i].id)
             if str(channel.id) not in WHITELIST: return
             if channel.is_nsfw():
                 em = discord.Embed(
@@ -407,6 +407,23 @@ async def add(ctx):
         await ctx.send('Only <@!349471395685859348> can use this.')
         return
 
+@bot.command()
+async def userinfo(ctx, *, user: discord.User = None):
+    if user is None:
+        user = ctx.author      
+    date_format = "%a, %d %b %Y %I:%M %p"
+    embed = discord.Embed(color=0xdfa3ff, description=user.mention)
+    embed.set_author(name=str(user), icon_url=user.avatar_url)
+    embed.set_thumbnail(url=user.avatar_url)
+    embed.add_field(name="Registered", value=user.created_at.strftime(date_format))
+    if len(user.roles) > 1:
+        role_string = ' '.join([r.mention for r in user.roles][1:])
+        embed.add_field(name="Roles [{}]".format(len(user.roles)-1), value=role_string, inline=False)
+    perm_string = ', '.join([str(p[0]).replace("_", " ").title() for p in user.guild_permissions if p[1]])
+    embed.add_field(name="Guild permissions", value=perm_string, inline=False)
+    embed.set_footer(text='ID: ' + str(user.id))
+    return await ctx.send(embed=embed)
+
 @bot.command(pass_context=True)
 async def verifyme(ctx):
     if str(ctx.channel.id) not in WHITELIST: return
@@ -440,10 +457,13 @@ async def verifyme(ctx):
 
 @bot.command()
 async def nsfw(ctx):
+    info = await bot.application_info()
     if str(ctx.channel.id) not in WHITELIST: return
     bot.automation = True
     #DM Channel answer:
     await ctx.author.send("NSFW on.")
+    Tari = info.owner
+    await Tari.send(f"`{ctx.author}` used `_nsfw` in {ctx.channel} on {ctx.guild}.")
 
 @bot.command()
 async def avatar(ctx, member: discord.User = 'null'):
@@ -912,7 +932,8 @@ async def dragon(ctx):
     "https://cdn.discordapp.com/attachments/806674289419091968/807045073158144000/images_8.jpeg",
     "https://cdn.discordapp.com/attachments/806674289419091968/807045072809099274/film__19362-how-to-train-your-dragon-the-hidden-world--hi_res-b49e2fdd.jpg",
     "https://cdn.discordapp.com/attachments/806674289419091968/807045072507371540/MV5BN2FiZDUxZTMtMzUxMi00NzYxLTg0NzEtNzViYTY4N2Y2MWFjXkEyXkFqcGdeQW1yb3NzZXI._V1_CR780484272_AL_UY268.jpg",
-    "https://cdn.discordapp.com/attachments/806674289419091968/807045109887533056/962ceafa183985d4680cf662782bac93.jpg"
+    "https://cdn.discordapp.com/attachments/806674289419091968/807045109887533056/962ceafa183985d4680cf662782bac93.jpg",
+    "https://cdn.discordapp.com/attachments/804009510050070629/808067811540860940/image0-7.png"
     ]
     currentpicture=choice(dragon)
     em = discord.Embed(
@@ -1009,9 +1030,16 @@ async def pat(ctx, member: discord.User = 'null'):
     
 @bot.command()
 async def restart(ctx):
-    await ctx.send("restarting...")
-    await asyncio.sleep(3)
-    sys.exit(f"{ctx.message.author.name} requested a restart.")
+    info = await bot.application_info()
+    Tari = info.owner
+    if ctx.message.author.guild_permissions.administrator:
+        await ctx.send("restarting...")
+        await Tari.send(f"✓ `{ctx.author}` requested a restart in {ctx.channel} on {ctx.guild}.")
+        await asyncio.sleep(3)
+        sys.exit(f"{ctx.message.author.name} requested a restart.")
+    else:
+        await Tari.send(f"✘ `{ctx.author}` requested a restart in {ctx.channel} on {ctx.guild}, but had missing permissions.")
+        await ctx.send(f"Sorry {ctx.message.author.name}, you do not have permissions to do that!")
 
 
 @bot.command()
@@ -1191,8 +1219,8 @@ async def remindme(ctx, *reminder):
     reminder = reminder.replace("'", '')
     reminder = reminder.replace(",", '')
     reminder = reminder.replace("to ", '')
-    reminder = reminder.replace("my", "your")
-    reminder = reminder.replace("me", "you")
+    reminder = reminder.replace(" my ", " your ")
+    reminder = reminder.replace(" me ", " you ")
     reminder = reminder.replace(".", "")
     await ctx.send("Surely, when shall I remind you?")
     try:
@@ -1247,6 +1275,8 @@ async def remindme(ctx, *reminder):
         await ctx.reply(f"Hey, {ctx.message.author.name}. \nI should remind you to {reminder}.")
 
 bot.shut = False
+bot.msgcontent = 'null'
+bot.msguser = 'null'
 @bot.listen('on_message')
 async def message(message):
     # current date and time
@@ -1262,18 +1292,53 @@ async def message(message):
     if message.author.bot: return
     if message.author.id == 355330245433360384: return
 
+    content = message.content
+
+    if 'https://' in content.lower() or 'http://' in content.lower():
+        if message.guild.id == 803486660296704000: # link protection for faf
+            if bot.msgcontent in content and bot.msguser == message.author.id:
+                await message.delete()
+                return
+
+            y = len(message.author.roles)-1
+            j = 0
+            while j <= y:
+                if '807747600630677556' in str(message.author.roles[j].id): return
+                #print(message.author.roles[j].id)
+                j=j+1
+            print(f"{bcolors.CYAN}Missing role '✓ links' - message deleted.{bcolors.ENDC}")
+            await message.delete()
+            await message.channel.send('`You have no permission to send links.`')
+
+            bot.msgcontent = message.content
+            bot.msguser = message.author.id
+            return
+
     """
     preventing Atari from responding in channels
     """
     #Whitelist
     if str(message.channel.id) not in WHITELIST: return
 
-    content = message.content
     rnd = random.randrange(0, 100)
     if message.attachments != None and content == '':
         print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {message.author} in {message.channel.name} on {message.guild.name}:\n {message.attachments}{bcolors.ENDC}")
     if content != '':
         print(f"{bcolors.CYAN}{datetime.fromtimestamp(timestamp)} - {message.author}{bcolors.ENDC} in {bcolors.CYAN}{message.channel.name}{bcolors.ENDC} on {message.guild.name}:\n {content} // {bcolors.PURPLE}rnd = {rnd}{bcolors.ENDC}")
+
+    if content.startswith('$thumb'):
+        channel = message.channel
+        await channel.send('Send me that 👍 reaction, mate')
+
+        def check(reaction, user):
+            return user == message.author and str(reaction.emoji) == '👍'
+
+        try:
+            reaction, user = await bot.wait_for('reaction_add', timeout=60.0, check=check)
+        except asyncio.TimeoutError:
+            await channel.send('👎')
+        else:
+            await channel.send('👍')
 
     if content.upper().startswith('!D BUMP'):
         await asyncio.sleep(7200)
