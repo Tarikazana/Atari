@@ -19,8 +19,11 @@ class MusicCog(commands.Cog):
 
   @commands.command(name='join')
   async def join(self, ctx):
-    print('join command worked')
     member = utils.find(lambda m: m.id == ctx.author.id, ctx.guild.members)
+    print(member)
+    print(member.id)
+    print(ctx.author.id)
+    print(member.voice)
     if member is not None and member.voice is not None:
       vc = member.voice.channel
       player = self.bot.music.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
@@ -31,7 +34,22 @@ class MusicCog(commands.Cog):
 
   commands.position = []
   @commands.command(name='play')
-  async def play(self, ctx, *, query):
+  async def play(self, ctx, *, query = None):
+    player = self.bot.music.player_manager.get(ctx.guild.id)
+    if not player.is_connected:
+        try:
+          vc = ctx.author.voice.channel
+          player.store('channel', ctx.channel.id)
+          await self.connect_to(ctx.guild.id, str(vc.id))
+          await ctx.channel.send(f"`// joined {ctx.author.name}. //`")
+        except:
+          await ctx.channel.send(f"`// Connect Atari with _join. //`")
+    if query == None:
+      if len(player.queue) >= 1:
+        await player.play()
+        return
+      else:
+        await ctx.channel.send(f"`// Required Song missing. //`")
     try:
       player = self.bot.music.player_manager.get(ctx.guild.id)
       if url_rx.match(query):
@@ -99,9 +117,58 @@ class MusicCog(commands.Cog):
 
       if player.is_playing:
         await player.stop()
-        player.queue.clear()
-        await ctx.channel.send(f"`// Queue clear. //`")
 
+    except Exception as error:
+      print(error)
+
+  @commands.command(name='cq')
+  async def cq(self, ctx):
+    try:
+      player = self.bot.music.player_manager.get(ctx.guild.id)
+
+      player.queue.clear()
+      await ctx.channel.send(f"`// Queue clear. //`")
+
+    except Exception as error:
+      print(error)
+
+  @commands.command(name='pause')
+  async def pause(self, ctx):
+    try:
+      player = self.bot.music.player_manager.get(ctx.guild.id)
+
+      if player.paused == False:
+        await player.set_pause(True)
+        await ctx.channel.send(f"`// Paused. //`")
+      else:
+        await player.set_pause(False)
+        await ctx.channel.send(f"`// Unpaused. //`")
+
+    except Exception as error:
+      print(error)
+
+  @commands.command(name='resume')
+  async def resume(self, ctx):
+    try:
+      player = self.bot.music.player_manager.get(ctx.guild.id)
+
+      if player.paused == True:
+        await player.set_pause(False)
+        await ctx.channel.send(f"`// Unpaused. //`")
+      else:
+        await ctx.channel.send(f"`// blep? //`")
+
+    except Exception as error:
+      print(error)
+
+  @commands.command(name='vol')
+  async def vol(self, ctx, arg):
+    try:
+      player = self.bot.music.player_manager.get(ctx.guild.id)
+
+      newvol = int(arg)
+      await player.set_volume(newvol)
+        
     except Exception as error:
       print(error)
 
@@ -110,7 +177,7 @@ class MusicCog(commands.Cog):
     player = self.bot.music.player_manager.get(ctx.guild.id)
     if len(player.queue) == 1:
       if 'www.twitch.tv/' in player.current.identifier:
-        embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Song queued.",url=f"{player.current.identifier}")
+        embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Song queued.\nrepeat: {player.repeat}\n",url=f"{player.current.identifier}")
       else:
         embed=Embed(title=player.current.title,description=f"Now playing\n➤ {len(player.queue)} Song queued.",url=f"https://youtube.com/watch?v={player.current.identifier}")
     else:
@@ -161,13 +228,12 @@ class MusicCog(commands.Cog):
       player = self.bot.music.player_manager.get(ctx.guild.id)
 
       if player.is_playing:
-        await player.play()
-        await ctx.channel.send(f"`// Skipped. //`")
         if len(player.queue) == 0:
           await ctx.channel.send(f"`// No Tracks in queue. //`")
+          await ctx.channel.send(f"`// Do _stop to stop the song. //`")
         else:
-          await player.play()
-
+          await player.skip()
+          await ctx.channel.send(f"`// Skipped. //`")
 
     except Exception as error:
       print(error)
